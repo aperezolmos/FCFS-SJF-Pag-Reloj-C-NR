@@ -1,0 +1,64 @@
+##############################################################################
+#                                                                            #
+#                  FICHERO DE AYUDA POR CÉSAR RODRÍGUEZ VILLAGRÁ             #
+#  BASADO EN EL FICHERO DE DIEGO GARCÍA MUÑOZ, FERNANDO ANTÓN ORTEGA         #
+#			Y DANIEL BEATO DE LA TORRE			        #
+#                                                                            #
+##############################################################################
+
+
+IMPORTANTE: Para que funciona la entrada por fichero todos los ficheros
+	que se indican a continuación deben estar en el directorio "datosScript"
+	y éste, en el directorio del script.
+
+TAMAÑO TERMINAL: Se recomienda ampliar la terminal a pantalla completa.
+
+INFORMES: por defecto tienen los nombres informeBN.txt e informeCOLOR.txt
+	y se guardan en la carpeta datosScript/informes
+	el nombre de los informes se puede cambiar al inicio del programa
+
+
+
+	
+
+ENTRADA DE DATOS POR TECLADO:
+	Se irán pidiendo los datos uno a uno por pantalla, y el usuario deberá escribir cada dato y pulsar INTRO
+	
+ENTRADA DE DATOS DE ÚLTIMA EJECUCIÓN:
+	Obtiene los datos de la última ejecución para porder volver a ejecutarlo
+
+OTRO FICHERO DE DATOS
+
+	Para introducir los datos por fichero hay que seguir la siguiente estructura:
+
+			Número de direcciones de página de la memoria
+			Tamaño de página
+			Tiempo de llegada P01;Tiempo de ejecución P01;Número de marcos P01;;Dirección de página 1 P01;Dirección de página 2 P01;...;Dirección de página N P01;
+			Tiempo de llegada P02;Tiempo de ejecución P02;Número de marcos P02;;Dirección de página 1 P02;Dirección de página 2 P02;...;Dirección de página N P02;
+			Tiempo de llegada P03;Tiempo de ejecución P03;Número de marcos P03;;Dirección de página 1 P03;Dirección de página 2 P03;...;Dirección de página N P03;
+			...
+			Tiempo de llegada P0N;Tiempo de ejecución P0N;Número de marcos P0N;;Dirección de página 1 P0N;Dirección de página 2 P0N;...;Dirección de página N P0N;
+			
+	Por ejemplo:
+			
+			500
+			100
+			5;4;3;;223;343;554;211;
+			4;8;3;;665;445;342;478;678;974;342;999;
+			2;12;5;;444;323;567;722;221;148;543;332;224;765;113;988;
+			0;2;2;;456;543;
+
+	NOTA IMPORTANTE: Recuerda que el número de páginas debe ser igual
+	al tiempo de ejecución de su proceso correspondiente.
+	
+ALEATORIO MANUAL:
+	Pide al usuario unos rangos de datos para generar los datos del problema pseudoaleatoriamente
+	
+FICHERO DE RANGOS DE ULTIMA EJECUCUION (datosrangos.txt):
+	Permite al usuario obtener los anteriores rangos que se han introducido aleatoriamente
+	
+OTRO FICHERO DE RANGOS:
+	Permite importar lo rangos guadardados en un fichero para que se puedan ejecutar, sin importar que sea de la última ejecución
+	
+
+ --- SISTEMAS OPERATIVOS - CURSO 2021/22 ---
