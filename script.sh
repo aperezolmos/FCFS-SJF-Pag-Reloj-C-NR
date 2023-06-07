@@ -1991,7 +1991,7 @@ function seleccionFCFS(){
 		read opcionEjec
 	done
 
-	case $menuOpcion in
+	case $opcionEjec in
 		1) # Muestra la opción 1 seleccionada.
 			clear
 			cabeceraInicio
@@ -2070,10 +2070,12 @@ function seleccionFCFS(){
 }
 
 
-############
+###################################################################################################################################
 
-
-lineadetiempoCero(){
+# Muestra el principio y final de la línea de tiempo, en el instante T=0.
+# 	Si se pasa como parámetro un '1', entonces es porque hay un proceso que llega en ese instante y se ha comenzado a escribir.
+# 	Si se pasa cualquier otro parámetro, aún no ha llegado ningún proceso por lo que se muestra vacía.
+function lineaDeTiempoCero(){
 
 	if [[ $1 -eq 1 ]]; then
 		if [[ $ejecutando -lt 10 ]]; then
@@ -2104,10 +2106,9 @@ lineadetiempoCero(){
 
 ############
 
+# Imprime la línea de tiempo.
+lineaDeTiempo(){
 
-lineadetiempo(){
-	#   count=1
-	#   cambiacolor=1
 	espacio=0
 	i=0
 	j=0
@@ -2128,48 +2129,34 @@ lineadetiempo(){
 	colorDiagTiem=();
 	n=0;
 	
-	
 	colsTerminal=`tput cols`
 	longImprimeTiem=0;
 	veces=0;
 	imprimeAhora=0;
 	
-	
-	for (( n=1; n<=$nProc; n++ ))
-		do
-			contadorPag[$n]=0
-		done
-	
-	#
-	#              P02         
-	#Tiempo: ------3  6  8  4  ----
-	#        0     2           6
-	#
-
-	#	echo "" | tee -a $informeColor
-	#	echo "" >> $informe
-	
-	
+	for (( n=1; n<=$nProc; n++ )); do
+		contadorPag[$n]=0
+	done
+		
 	#Imprime los procesos
 	filaTiemProc="    |"
 	m=6
 	#	colorProcDiagTiem[$m]
-	for (( i=0; i<$nCambiosContexto; i++ ))
-		do
-			let j=i+1
+	for (( i=0; i<$nCambiosContexto; i++ )); do
+			
+		let j=i+1
 		
-			let tiempoCambio[j]=(tCambiosContexto[j]-tCambiosContexto[i])
-			let espaciosTotales[j]=tiempoCambio[j]*3
-			let espaciosMenos[j]=espaciosTotales[j]-3
+		let tiempoCambio[j]=(tCambiosContexto[j]-tCambiosContexto[i])
+		let espaciosTotales[j]=tiempoCambio[j]*3
+		let espaciosMenos[j]=espaciosTotales[j]-3
 	
-			if [[ ${pEjecutados[$j]} -eq -1 ]]  #Si vale -1 no se imprime nada.
-				then
-					for ((n=0; n<${espaciosTotales[$j]}; n++))
-						do
-							filaTiemProc="${filaTiemProc} "
-							((m++))
-						done
-				else
+		if [[ ${pEjecutados[$j]} -eq -1 ]]  #Si vale -1 no se imprime nada.
+			then
+				for ((n=0; n<${espaciosTotales[$j]}; n++)); do
+					filaTiemProc="${filaTiemProc} "
+					((m++))
+				done
+		else
 					if [[ ${pEjecutados[$j]} -lt 10 ]]
 						then
 							filaTiemProc="${filaTiemProc}P0${pEjecutados[$j]}"
@@ -2195,9 +2182,8 @@ lineadetiempo(){
 							filaTiemProc="${filaTiemProc} "
 							((m++))
 						done
-			fi
-		#	filaTiemProc="${filaTiemProc}"
-		done
+		fi
+	done
 
 	if [[ $finalizados -ne $nProc ]]
 		then
@@ -2282,71 +2268,7 @@ lineadetiempo(){
 	filaTiemTiem="${filaTiemTiem}|"
 
 
-	#  if [[ $nCambiosContexto -eq 1 ]]   #Para que el cálculo solo se haga una vez.
-	#    then
-	#        let espacio[1]=espaciosTotales[1]-1
-	#    else
-	#		let previoCambio=nCambiosContexto-1
-	#		if [[ ${tCambiosContexto[$previoCambio]} -lt 10 ]]
-	#			then
-	#				let espacio[$nCambiosContexto]=espaciosTotales[$nCambiosContexto]-1
-	#			else
-	#				if [[ ${tCambiosContexto[$previoCambio]} -lt 100 ]]
-	#					then
-	#						let espacio[$nCambiosContexto]=espaciosTotales[$nCambiosContexto]-2
-	#					else
-	#						let espacio[$nCambiosContexto]=espaciosTotales[$nCambiosContexto]-3
-	#				fi
-	#		fi
-	# fi
-	#  
-	#  for (( i = 0; i <= $nCambiosContexto ; i++ ))
-	#    do
-	#	   	 filaTiemTiem="${filaTiemTiem}${tCambiosContexto[i]}"
-	#		for ((n=0; n<${espacio[$i]}; n++))
-	#			do
-	#				filaTiemTiem="${filaTiemTiem} "
-	#			done
-	#				let k=i+1
-	#				filaTiemTiem="${filaTiemTiem}${tCambiosContexto[i]}"
-	#    done
-	#	filaTiemTiem="${filaTiemTiem}"
-
-
-	#guarda colores de procesos
-	#	n=9
-
-	#	for (( i=0; i<$nCambiosContexto; i++ ))
-	#		do
-	#			let j=i+1
-	#		
-	#			let tiempoCambio[j]=(tCambiosContexto[j]-tCambiosContexto[i])
-	#			let espaciosTotales[j]=tiempoCambio[j]*3
-	#			let espaciosMenos[j]=espaciosTotales[j]-3
-	#	
-	#			if [[ ${pEjecutados[$j]} -eq -1 ]]  #Si vale -1 no se imprime nada.
-	#				then
-	#					for ((m=0; m<${espaciosTotales[$j]}; m++))
-	#						do
-	#							((n++))
-	#						done
-	#				else
-	#					for (( o=1; o<=3; o++ ))
-	#						do
-	#							colorProcDiagTiem[$n]="\e[1;3${colorines[${pEjecutados[$j]}]}m"
-	#							((n++))
-	#						done
-	#					for ((m=0; m<${espaciosMenos[$j]}; m++))
-	#						do
-	#							((n++))
-	#						done
-	#			fi
-	#		done
-	#	for (( o=1; o<=3; o++ ))
-	#		do
-	#			colorProcDiagTiem[$n]="\e[1;3${colorines[$ejecutando]}m"
-	#			((n++))
-	#		done
+	
 		
 	
 	#guarda los colores de páginas
@@ -2380,9 +2302,7 @@ lineadetiempo(){
 			fi
 		done
   
-	#	echo "$filaTiemProc" >> $informe
-	#	echo "$filaTiemPag" >> $informe
-	#	echo "$filaTiemTiem" >> $informe
+
 		
 	longImprimeTiem=`expr length "$filaTiemPag"`
 	veces=0;
@@ -3021,39 +2941,30 @@ media(){
 			((tot++))
 		done
 	laMedia=`(echo "scale=3;$laMedia/$tot" | bc -l)`
-	
 }
 
 
 ############
 
+# Muestra un resumen de los tiempos de ejecución y fallos de página de cada proceso al finalizar el algoritmo.
+function resumenFinal(){
 
-resumenfinal(){
-
+	clear
 	media 'esperaSinLlegada[@]'
 	mediaespera=$laMedia
 	media 'duracion[@]'
 	mediadura=$laMedia
 	laMedia=0
-	#	clear
-	#	echo "" >> $informe
-	#	echo "" >> $informe
-	#	echo "" >> $informe
-	#	echo "" >> $informe
-	#	echo "" >> $informe
-	#	echo "" >> $informe
-	#	echo "" >> $informe
-	#	echo "" | tee -a $informeColor
-	#	echo "" | tee -a $informeColor
-	#	echo -e " T.Espera:    Tiempo que el proceso no ha estado ejecutándose en la CPU desde que entra en memoria hasta que sale" | tee -a $informeColor
-	#	echo -e " Inicio/Fin:  Tiempo de llegada al gestor de memoria del proceso y tiempo de salida del proceso" | tee -a $informeColor
-	#	echo -e " T.Retorno:   Tiempo total de ejecución del proceso, incluyendo tiempos de espera, desde la señal de entrada hasta la salida" | tee -a $informeColor
-	#	echo -e " Fallos Pág.: Número de fallos de página que han ocurrido en la ejecución de cada proceso" | tee -a $informeColor
-	#echo "" | tee -a $informeColor
-	#echo "" | tee -a $informeColor
+
+	echo -e " T.Espera:    Tiempo que el proceso no ha estado ejecutándose en la CPU desde que entra en memoria hasta que sale" | tee -a $informeColor
+	echo -e " Inicio/Fin:  Tiempo de llegada al gestor de memoria del proceso y tiempo de salida del proceso" | tee -a $informeColor
+	echo -e " T.Retorno:   Tiempo total de ejecución del proceso, incluyendo tiempos de espera, desde la señal de entrada hasta la salida" | tee -a $informeColor
+	echo -e " Fallos Pág.: Número de fallos de página que han ocurrido en la ejecución de cada proceso" | tee -a $informeColor
+	echo "" | tee -a $informeColor
+	echo "" | tee -a $informeColor
 	echo -e " Resumen final con tiempos de ejecución y fallos de página de cada proceso" | tee -a $informeColor
-	#echo "" | tee -a $informeColor
-	#echo "" | tee -a $informeColor
+	echo "" | tee -a $informeColor
+	echo "" | tee -a $informeColor
 	#echo -e "\e[1;32m|----------------------------------------------------------->\e[0m" | tee -a $informeColor
 	echo -e " Proc.   T.Espera    Inicio/Fin  T.Retorno   Fallos Pág." | tee -a $informeColor
 	
@@ -3068,11 +2979,9 @@ resumenfinal(){
 	echo "Inicio/Fin:  Tiempo de llegada al gestor de memoria del proceso y tiempo de salida del proceso" >> $informe
 	echo "T.Retorno:   Tiempo total de ejecución del proceso, incluyendo tiempos de espera, desde la señal de entrada hasta la salida" >> $informe
 	echo "Fallos Pág.:   Número de fallos de página que han ocurrido en la ejecución de cada proceso" >> $informe
-	#echo "" >> $informe
-	#echo "" >> $informe
+	echo "" >> $informe
+	echo "" >> $informe
 	echo "Resumen final con tiempos de ejecución y fallos de página de cada proceso" >> $informe
-	#echo "" >> $informe
-	#echo "" >> $informe
 	#echo "|----------------------------------------------------------->" >> $informe
 		  
 	#echo "|" >> $informe
@@ -3099,10 +3008,6 @@ resumenfinal(){
 	echo "   Tiempo total transcurrido en ejecutar todos los procesos: $tSistema" >> $informe
 	echo "   Media tiempo espera  de todos los procesos: $mediaespera" >> $informe
 	echo "   Media tiempo retorno de todos los procesos: $mediadura" >> $informe
-	#echo "" | tee -a $informeColor
-	#echo "" | tee -a $informeColor
-	#echo "" >> $informe
-	#echo "" >> $informe
 }
 
 
@@ -4085,25 +3990,21 @@ actualizaCola(){
 
 
 mueveCola(){
-	u=0;
 
 	u=0
-	until [[ ${cola[$u]} == "vacio" ]]
-		do
-			((u++))
-		done
+	until [[ ${cola[$u]} == "vacio" ]]; do
+		((u++))
+	done
 	((u--))
 	
-	for (( n=0; n<$u; n++ ))
-		do
-			m=$((n+1))
-			let cola[$n]=cola[$m]
-		done
+	for (( n=0; n<$u; n++ )); do
+			
+		m=$((n+1))
+		let cola[$n]=cola[$m]
+	done
 		
-	
 	cola[$n]="vacio"
 
-	
 }
 
 ############
@@ -4289,7 +4190,7 @@ function FCFS(){
 			diagramaResumen
 			imprimeNRU
 			diagramaMemoria
-			lineadetiempoCero 0
+			lineaDeTiempoCero 0
 
 			if [[ $opcionEjec = 2 ]]; then
 				sleep $segEsperaEventos
@@ -4329,7 +4230,7 @@ function FCFS(){
 			imprimeNRU
 			diagramaMemoria
 				#diagramaTiempo
-			lineadetiempo
+			lineaDeTiempo
 			if [[ $opcionEjec = 2 ]]; then
 				sleep $segEsperaEventos
 			else
@@ -4361,7 +4262,7 @@ function FCFS(){
 				imprimeNRU
 				diagramaMemoria
 				#diagramaTiempo
-				lineadetiempoCero 1
+				lineaDeTiempoCero 1
 				if [[ $opcionEjec = 2 ]]; then
 					sleep $segEsperaEventos
 				else
@@ -4374,21 +4275,16 @@ function FCFS(){
 	ejecutando=${cola[0]}
 	mueveCola
 	
-	while [ $seAcaba -eq 0 ]
-		do
+	while [ $seAcaba -eq 0 ]; do
 		
-			if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
-				clear
-				#echo "" >> $informe
-				#echo "" >> $informe
-				#echo "" >> $informeColor
-				#echo "" >> $informeColor
-			fi
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+			clear
+		fi
 			#ejecutando=${ordenados[$position]}
 			
-			if [ $finalizados -ne $nProc ]; then #Cambio de contexto
-				tiemproceso=$tSistema
-			fi
+		if [ $finalizados -ne $nProc ]; then 	# Cambio de contexto.
+			tiemproceso=$tSistema
+		fi
  			
 			let tSistema=tSistema+tiempoRestante[$ejecutando]
 			let salida[$ejecutando]=$tSistema	#El momento de retorno será igual al momento de salida en el reloj
@@ -4495,7 +4391,7 @@ function FCFS(){
 				then
 					diagramaMemoria
 					#diagramaTiempo
-					lineadetiempo
+					lineaDeTiempo
 			fi
 
 			
@@ -4528,7 +4424,7 @@ function FCFS(){
 	elif [[ $opcionEjec = 2 ]]; then
 		sleep $segEsperaEventos	
 	fi 
-	#resumenfinal
+	resumenFinal
 }
 
 ############
@@ -5083,7 +4979,7 @@ function imprimeTamanyoRecomendado(){
 function main(){
 	cabecera
 	cabeceraInicio
-	imprimeTamanyoRecomendado
+	#imprimeTamanyoRecomendado
 	menuInicio
 	sed -i 's/\x0//g' ${informe}			# Limpia los caracteres NULL que se han impreso en el informe.
 	sed -i 's/\x0//g' ${informeColor}		# Limpia los caracteres NULL que se han impreso en el informeColor.
