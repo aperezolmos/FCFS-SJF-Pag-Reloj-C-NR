@@ -153,79 +153,90 @@
 	tamEspacioGrande=0		# Tamaño del espacio vacío más grande en memoria.
 	espaciosMemoria=()		# Array que contiene la cantidad de espacios vacíos consecutivos en memoria.
 
-	declare -A procesoTiempoMarcoPagina 	# procesoTiempoMarcoPagina[$p,$t,$m]=pagina
-	declare -A procesoTiempoMarcoPuntero
-	declare -A procesoTiempoMarcoSegunda
+	# Algoritmo Reloj
+	declare -A procesoTiempoMarcoPagina			# Valores de los marcos de memoria.
+	declare -A procesoTiempoMarcoPuntero		# Orden del puntero.
+	declare -A procesoTiempoMarcoBitsReloj		# Valores de bits de reloj.
 
 ###################################################################################################################################
 
-encontrarYactualizar(){
+
+# Función principal del algoritmo de Reloj. Calcula las páginas del proceso, establece las variables necesarias e itera sobre cada
+# página para ejecutar el algoritmo.
+function reloj(){
+
+	# Calcular páginas del proceso
+	paginasProceso=()
+	for (( i = 0; i < ${tEjec[$1]}; i++ )); do
+		paginasProceso[$i]=${paginas[$1,$i]}
+	done
+
+	numeroMarcos=${nMarcos[$1]}
+	tiempoEjecucion=${#paginasProceso[*]}
+	puntero=0
+	numeroFallos=0
+	bitReloj=()
+	memoriaMarcos=()
+
+	for ((i = 0; i < $numeroMarcos; i++))
+	do
+	 	memoriaMarcos[$i]=-1
+	 	bitReloj[$i]=0
+	done
+	procesoTiempoMarcoPuntero[$1,-1]=$puntero
+
+	for ((i = 0; i < $tiempoEjecucion; i++))
+	do
+	 	paginaActual=${paginasProceso[$i]}
+	 	encontrarYactualizar
+	 	if [[ $? -eq 1 ]]
+	 	then
+	 		reemplazarYactualizar
+	 		((numeroFallos++))
+	 	fi
+	 	# Guardar el orden de memoria
+	 	procesoTiempoMarcoPuntero[$1,$i]=$puntero
+
+	 	for (( j = 0; j < ${numeroMarcos}; j++ )); do
+	 		procesoTiempoMarcoPagina[$1,$i,$j]=${memoriaMarcos[$j]}
+	 	done
+
+	 	for (( j = 0; j < ${numeroMarcos}; j++ )); do
+            procesoTiempoMarcoBitsReloj[$1,$i,$j]=${bitReloj[$j]}
+       done
+	done
+}
+
+###################################################################################################################################
+
+# Función auxiliar. Devuelve '0' si la página buscada se encuentra en memoria y '1' si no está en memoria.
+function encontrarYactualizar(){
+
 	for ((j = 0; j < $numeroMarcos; j++)); do
 		if [[ ${memoriaMarcos[$j]} -eq $paginaActual ]]
 		then
-			segunda_Oportunidad[$j]=1
 			return 0
 		fi
 	done
 	return 1
 }
 
-############
+###################################################################################################################################
 
-reemplazarYactualizar(){
+# Función auxiliar. Lleva a cabo el proceso de reemplazo de una página si fuera necesario.
+#	- Si el bit de la página apuntada por el puntero es 1, se cambia a 0 y se avanza el puntero al siguiente marco.
+#	- Si el bit es 0, se actualiza esa página con la nueva página '$paginaActual', se establece el bit a 1 y se avanza el puntero.
+function reemplazarYactualizar(){
+
 	while :; do
-		if [[ ${segunda_Oportunidad[$puntero]} -eq 0 ]]; then
-			memoriaMarcos[$puntero]=$paginaActual
-			puntero=$((($puntero+1)%$numeroMarcos))
-			return 1
-		fi
-		segunda_Oportunidad[$puntero]=0
-		puntero=$((($puntero+1)%$numeroMarcos))
-	done
-}
-
-############
-
-segundaOportunidad(){
-
-	# Calcular paginas del proceso
-	pagsegop=()
-	for (( i = 0; i < ${tEjec[$1]}; i++ )); do
-		pagsegop[$i]=${paginas[$1,$i]}
-	done
-
-	numeroMarcos=${nMarcos[$1]}
-	tiempoEjecucion=${#pagsegop[*]}
-	puntero=0
-	numeroFallos=0
-	segunda_Oportunidad=()
-	memoriaMarcos=()
-
-	for ((i = 0; i < $numeroMarcos; i++))
-	do
-		memoriaMarcos[$i]=-1
-		segunda_Oportunidad[$i]=0
-	done
-	procesoTiempoMarcoPuntero[$1,-1]=$puntero
-	for ((i = 0; i < $tiempoEjecucion; i++))
-	do
-	#	procesoTiempoMarcoPuntero[$1,$i]=$puntero
-		paginaActual=${pagsegop[$i]}
-		encontrarYactualizar 
-		if [[ $? -eq 1 ]]
-		then
-			reemplazarYactualizar
-			((numeroFallos++))
-		fi
-		# Guardar el orden de memoria
-		procesoTiempoMarcoPuntero[$1,$i]=$puntero
-		for (( j = 0; j < ${numeroMarcos}; j++ )); do
-			procesoTiempoMarcoPagina[$1,$i,$j]=${memoriaMarcos[$j]}
-		done
-
-		for (( j = 0; j < ${numeroMarcos}; j++ )); do
-                procesoTiempoMarcoSegunda[$1,$i,$j]=${segunda_Oportunidad[$j]}
-    	done
+		if [[ ${bitReloj[$puntero]} -eq 0 ]]; then
+	 		memoriaMarcos[$puntero]=$paginaActual
+	 		bitReloj[$puntero]=1
+	 		puntero=$((($puntero+1)%$numeroMarcos))
+	 		return 1
+	 	fi
+	 	bitReloj[$puntero]=0
+	 	puntero=$((($puntero+1)%$numeroMarcos))
 	done
 }
 
@@ -368,7 +379,7 @@ function seleccionMenuInicio(){
 ###################################################################################################################################
 
 # PENDIENTE DE HACER -> menú para ver si el usuario quiere FCFS o SJF
-#function seleccionAlgortimo(){
+#function seleccionAlgoritmo(){
 	#texto
 #}
 
@@ -569,16 +580,8 @@ function seleccionEntrada(){
 	calcularEspacios
 
 	for (( proc=1; proc<=$nProc; proc++ )); do
-		segundaOportunidad $proc
+		reloj $proc
 	done
-
-	#	procesito=1
-	#	for (( i=0; i<${tEjec[$procesito]}; i++));do
-	#		for (( j=0; j<${nMarcos[$procesito]}; j++ ));do
-	#			printf "%4s" "${procesoTiempoMarcoPagina[$procesito,$i,$j]}"
-	#		done
-	#		echo
-	#	done
 }
 
 ###################################################################################################################################
@@ -3138,7 +3141,7 @@ nru(){
                                         		then
                                                 	echo -n -e "s"
                                         	 fi
-                                                 printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoSegunda[$ejecutandoAntiguo,$r,$m]}"
+                                                 printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBitsReloj[$ejecutandoAntiguo,$r,$m]}"
                                  fi
                                  echo -n -e "f"
 
@@ -3167,7 +3170,7 @@ nru(){
                                                 echo -n -e "s"
                                         fi
 
-						printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoSegunda[$ejecutandoAntiguo,$r,$m]}"
+						printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBitsReloj[$ejecutandoAntiguo,$r,$m]}"
 					fi
 					echo -n -e "f"
 				done
@@ -4104,13 +4107,13 @@ function FCFS(){
 		let npagaejecutar[$i]=0
 	done
 			
-	i=0;#??
+	i=0; #??
 	
 	for (( i = 1; i <= $nProc; i++ )); do
 		let contadorPagGlob[$i]=0
 	done
 			
-	i=0;#??
+	i=0; #??
 	
 	cola[0]="vacio"
 		
@@ -4466,17 +4469,6 @@ function final(){
 	clear
 	#guardaDatos
 	clear
-	#	if [[ -f ayuda.txt ]]
-	#		then
-	#			rm ayuda.txt
-	#	fi
-	#	echo ""
-	#	echo -e "\e[1;31mBorrados los ficheros temporales\e[0m"
-	#	echo ""
-	#	
-	#	echo "" >> fichero.txt
-	#	echo "Borrados los ficheros temporales" >> fichero.txt
-	#	echo "" >> fichero.txt
 	
 	printf "\n$_cyan$_b%s\n\n$_rst"		" Por último, ¿desea abrir el informe? (s/n)"
 	read abrirInforme
