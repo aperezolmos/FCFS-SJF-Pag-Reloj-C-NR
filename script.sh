@@ -54,15 +54,6 @@
 	#variable del main
 	#ficheroant="`grep -lior 'fichero: ' ./datosScript/informes | cut -d "/" -f4 | cut -d "." -f1`.txt"		#busca el anterior informe generado
 
-	#ordenacionViejo	BORRAR? comprobar
-	pep=0;			#Utilizado en la funcion ordenacion, para inicializar el vector ordenados con los datos correspondientes
-	kek=0;			#Utilizado en la funcion ordenacion, para recorrer todos los procesos y asignar el nro de procesos al vector ordenados
-	jej=0;			#Utilizado en la funcion ordenacion, para recorrer todos los procesos y comprar sus tiempos de llegada
-	lel=0;			#Utilizado en la funcion ordenacion, para recorrer los procesos ya ordenados y comparar si el actual proceso ha sido ordenado ya
-	aux=0;			#Utilizado en la funcion ordenacion, para recoger el dato del proceso que se va a introducir en el vector ordenados
-	max=0;			#Utilizado en la funcion ordenacion, para guardar el dato actual del Maximo tiempo de llegada
-	one=0;			#Utilizado en la funcion ordenacion, como booleano para comprobar si el actual proceso ha sido ordenado ya
-
 	#entradaFichero
 	ficheroIn=0; 						#indica el nombre del fichero de entrada
 	fichExiste=0;						#indica si el fichero introducido existe
@@ -247,9 +238,10 @@ function aleatorioEntre() {
     eval "${1}=$( shuf -i ${2}-${3} -n 1 )"
 }
 
-############
+###################################################################################################################################
 
-calcularEspacios(){
+# Calcula el tamaño del espacio vacío más grande en memoria ('tamEspacioGrande') y guarda la cantidad de espacios vacíos consecutivos en memoria ('espaciosMemoria').
+function calcularEspacios(){
 	tamEspacioGrande=0			# Tamaño del espacio vacío más grande en memoria.
 	espaciosMemoria=()			# Array que contiene la cantidad de espacios vacíos consecutivos en memoria.
 	local posicionInicial=0		# Indica el índice del primer marco vacío en memoria.
@@ -1334,93 +1326,6 @@ function entradaFicheroRangos(){
 
 ###################################################################################################################################
 
-# NO USADO??
-entradarangoarchivo(){
-	minRangoMemoria=0
-	maxRangoMemoria=0
-	minRangoTamPagina=0
-	maxrangotampagina=0
-	minRangoNumProcesos=0
-	maxRangoNumProcesos=0
-	numeroprocesos=0
-	minRangoTLlegada=0
-	maxRangoTLlegada=0
-	minRangoNumMarcos=0
-	maxRangoNumMarcos=0
-	minRangoNumDirecciones=0
-	maxRangoNumDirecciones=0
-	numerodedirecciones=()
-	minRangoValorDireccion=0
-	maxRangoValorDireccion=0
-	contadordirecciones=0
-	valordirecciones=0
-	
-	
-	leeRangosFichero
-	
-	#hace que las variables globales sean aleatorias,leyendo los rangos
-	
-	
-	aleatorioEntre marcosMem $minRangoMemoria $maxRangoMemoria
-	
-	echo "$tamMem" >> $informe
-	echo -e "\e[1;32m$tamMem\e[0m" >> $informeColor
-	
-	
-	
-	aleatorioEntre tamPag $minRangoTamPagina $maxrangotampagina
-	
-	echo "$tamPag" >> $informe
-	echo -e "\e[1;32m$tamPag\e[0m" >> $informeColor
-	
-	tamMem=$(($marcosMem*$tamPag))
-	
-	
-	p=1
-	
-	aleatorioEntre numeroprocesos $minRangoNumProcesos $maxRangoNumProcesos
-	
-	
-	maxPags[$p]=0;
-	
-	
-	for (( p=1; p<=$numeroprocesos; p++ ))
-	do
-		maxPags[$p]=0;
-		aleatorioEntre tLlegada[$p] $minRangoTLlegada $maxRangoTLlegada
-		pag=${tEjec[$p]};
-		aleatorioEntre nMarcos[$p] $minRangoNumMarcos $maxRangoNumMarcos
-		tamProceso[$p]=$((${nMarcos[$p]}*$tamPag))
-		
-		
-		aleatorioEntre numerodedirecciones[$p] $minRangoNumDirecciones $maxRangoNumDirecciones
-		
-		for (( pag=0; pag<=${numerodedirecciones[$p]}; pag++ ))
-		do
-			aleatorioEntre valordirecciones $minRangoValorDireccion $maxRangoValorDireccion
-			direcciones[$p,$pag]=$valordirecciones
-			tEjec[$p]=$(($pag+1))
-			maxPags[$p]=${tEjec[$p]}
-			paginas[$p,$pag]=$((${direcciones[$p,$pag]}/$tamPag))
-			clearImprime
-		done
-		
-		clearImprime
-	done
-	
-	
-	p=$(($p - 1))
-	nProc=$p
-	#guardaDatos
-	clear
-	guardaDatosAleatorios
-	guardaRangos
-	imprimeProcesosFinal
-	
-}
-
-###################################################################################################################################
-
 # NO USADO?? (solo comentado).
 entradaFicheroAleatorio(){
 #toma un archivo aleatorio de los disponibles
@@ -1735,8 +1640,8 @@ function muestraArchivosRangos(){
 function imprimeVarGlob(){
 	
 	echo -e " Memoria del Sistema:  \e[1;33m$tamMem\e[0m"
-	echo -e " Tamaño  de   Página:  \e[1;33m$tamPag\e[0m"
-	echo -e " Número  de   marcos:  \e[1;33m$marcosMem\e[0m"
+	echo -e "    Tamaño de página:  \e[1;33m$tamPag\e[0m"
+	echo -e "    Número de marcos:  \e[1;33m$marcosMem\e[0m"
 }
 
 ###################################################################################################################################
@@ -1884,44 +1789,6 @@ function asignaColores(){
 function clearImprime(){
 	clear
 	imprimeProcesos
-}
-
-###################################################################################################################################
-
-# NO USADO?? -> BORRAR después de comprobar.
-function ordenacionViejo(){
-	#Se inicializa el vector de ordenacion
-	for (( pep=1; pep<=$p; pep++ ))
-		do
-			ordenados[$pep]=$p
-		done
-	for (( kek=$(expr $p-1); kek>0; kek-- ))
-		do
-			max=0
-			for (( jej=1; jej<$p; jej++ ))
-				do
-					for (( lel=$kek, one=0; lel<=$(expr $p-1); lel++ ))
-						do
-							if [ $jej -eq "${ordenados[$lel]}" ]
-								then
-									one=1
-							fi
-						done
-				if [ $one -eq 0 ]
-					then
-						if [[ ${tLlegada[$jej]} -ge $max ]]
-							then
-								aux=$jej
-								max=${tLlegada[$jej]}
-						fi
-				fi
-				done
-			ordenados[$kek]=$aux
-		done
-	if [ $p -eq 1 ]
-		then
-			ordenados[1]=1
-	fi
 }
 
 ###################################################################################################################################
