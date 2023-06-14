@@ -68,7 +68,7 @@
 	laMedia=0;
 
 	#vectores
-	esperaconllegada=();				#Tiempo de espera de cada proceso incluyendo el tiempo de llegada
+	esperaConLlegada=();				#Tiempo de espera de cada proceso incluyendo el tiempo de llegada
 	esperaSinLlegada=();				#Tiempo de espera de cada proceso sin incluir el tiempo de llegada
 	enMemoria=();						#Vale "fuera" si el proceso no está en memoria, "dentro" si el proceso está en memoria y "salido" si acabó
 
@@ -2395,17 +2395,17 @@ function diagramaResumen(){
 			
 		if [[ $ord -lt 10 ]]; then
 			printf " \e[1;3${colorines[$ord]}mP0$ord %3u %3u %4u" "${tLlegada[$ord]}" "${tEjec[$ord]}" "${nMarcos[$ord]}" | tee -a $informeColor
-			echo -n " P0$ord	T.lleg: ${tLlegada[$ord]}	T.Ejec: ${tEjec[$ord]}	Marcos: ${nMarcos[$ord]}	T.Espera: ${esperaconllegada[$ord]}  " >> $informe
+			echo -n " P0$ord	T.lleg: ${tLlegada[$ord]}	T.Ejec: ${tEjec[$ord]}	Marcos: ${nMarcos[$ord]}	T.Espera: ${esperaConLlegada[$ord]}  " >> $informe
 		else
 			printf " \e[1;3${colorines[$ord]}mP$ord %3u %3u %4u" "${tLlegada[$ord]}" "${tEjec[$ord]}" "${nMarcos[$ord]}" | tee -a $informeColor
-			echo -n " P$ord	T.lleg: ${tLlegada[$ord]}	T.Ejec: ${tEjec[$ord]}	Marcos: ${nMarcos[$ord]}	T.Espera: ${esperaconllegada[$ord]}  " >> $informe
+			echo -n " P$ord	T.lleg: ${tLlegada[$ord]}	T.Ejec: ${tEjec[$ord]}	Marcos: ${nMarcos[$ord]}	T.Espera: ${esperaConLlegada[$ord]}  " >> $informe
 		fi
 
 		#Imprime el tiempo de espera
 		if [[ ${tLlegada[$ord]} -gt $tSistema ]]; then		# Si el tiempo de llegada del proceso es mayor que el del sistema es porque aún no ha entrado.
 			echo -n -e "    -   " | tee -a $informeColor
 		else
-			esperaSinLlegada[$ord]=$((${esperaconllegada[$ord]}-${tLlegada[$ord]}))
+			esperaSinLlegada[$ord]=$((${esperaConLlegada[$ord]}-${tLlegada[$ord]}))
 			printf " %4d" "${esperaSinLlegada[$ord]}" | tee -a $informeColor
 		fi
 			
@@ -2538,7 +2538,7 @@ function diagramaResumen(){
 		echo "" >> $informe
 	done
 	resumenTMedios
-	imprimeCola
+	#imprimeCola
 }
 
 ############
@@ -2638,7 +2638,7 @@ sumaTiempoEspera(){
 	for (( counter=1; counter <= $nProc; counter++ )); do
 		
 		if [[ $counter -ne $ejecutando || $1 -eq 1 ]] && [[ ${tiempoRestante[$counter]} -ne 0 ]]; then
-			let esperaconllegada[$counter]=esperaconllegada[$counter]+aumento
+			let esperaConLlegada[$counter]=esperaConLlegada[$counter]+aumento
 		fi
 	done
 }
@@ -3465,116 +3465,66 @@ function resumenTMedios(){
 ############
 
 
-meteEnMemoria(){
+meteEnMemoria() {
+    nProcMeter=0
+    paraMeter=()
+    n=0
+    prim=0
 
-	nProcMeter=0;
-	paraMeter=();
-	n=0;
-	prim=0;
-	
-	fef=0
-	while [ $fef -eq 0 ]
-		do
-			#if [ $position -gt $nProc ]
-				#then #Si hemos llegado al final del vector lista
-					#position=1
-					#ejecutando=${ordenados[$position]}
-			#fi
-			if [ $exe -eq 0 ]
-				then
-					let tSistema=tSistema+1 #Si no ha habido ninguna ejecución en la lista anterior ir al siguiente turno
-					tiemproceso=1
-					aumento=1
-					sumaTiempoEspera 1
-			fi
-			exe=0
-			nProcMeter=0
-			dejaentraramemoria=1
-			for ((posic = 1; posic <= $nProc; posic++ ))
-				do
-					counter=${ordenados[$posic]}
-					if [[ ${tiempoRestante[$counter]} -ne 0 ]] && [[ $tSistema -ge ${tLlegada[$counter]} ]]
-						then
-							if [[ ${enMemoria[$counter]} == "fuera" ]] && [[ $tSistema -ge ${tLlegada[$counter]} ]] 
-							
-							#&& [[ $dejaentraramemoria -eq $posic ]]
-							
-							
-								then
-									let memUtiliz=memUtiliz+${tamProceso[$counter]}
-								#	echo "Aqui ${nMarcos[$counter]} $tamEspacioGrande"
-								#	for palabra in ${!procesosMemoria[*]}; do
-								#		echo "$palabra < ${procesosMemoria[$palabra]}"
-								#	done
-								#	if [[ $memUtiliz -gt $tamMem ]]
-								#		then
-								#			let memUtiliz=memUtiliz-${tamProceso[$counter]}
+    fef=0
+    while [ $fef -eq 0 ]; do
+        if [ $exe -eq 0 ]; then
+            let tSistema=tSistema+1 # Si no ha habido ninguna ejecución en la lista anterior ir al siguiente turno
+            tiemproceso=1
+            aumento=1
+            sumaTiempoEspera 1
+        fi
+        exe=0
+        nProcMeter=0
+        dejaentraramemoria=1
+        for ((posic = 1; posic <= $nProc; posic++)); do
+            counter=${ordenados[$posic]}
+            if [[ ${tiempoRestante[$counter]} -ne 0 ]] && [[ $tSistema -ge ${tLlegada[$counter]} ]]; then
+                if [[ ${enMemoria[$counter]} == "fuera" ]] && [[ $tSistema -ge ${tLlegada[$counter]} ]]; then
+                    let memUtiliz=memUtiliz+${tamProceso[$counter]}
 
-										if [[ ${nMarcos[$counter]} -le $tamEspacioGrande ]] 
-										then
-
-											#ejecutando=$counter;
-											((nProcMeter++))
-											paraMeter[$nProcMeter]=$counter
-											#anadeCola $counter
-											enMemoria[$counter]="dentro"
-											for marcoNuevo in ${!espaciosMemoria[*]}; do
-												if [[ ${espaciosMemoria[$marcoNuevo]} -ge ${nMarcos[$counter]} ]]
-												then
-													procesosMemoria[$marcoNuevo]=$counter
-													marcoIntroducido=$marcoNuevo
-
-												fi
-											done
-											calcularEspacios
-											fef=1
-											if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]
-												then
-													if [[ $prim -eq 0 ]]
-														then
-															prim=1
-															#echo "" | tee -a $informeColor
-															#echo "" >> $informe
-													fi
-													if [[ $counter -lt 10 ]]
-														then
-															echo -e " Entra el proceso \e[1;3${colorines[$counter]}mP0$counter\e[0m a memoria a partir del marco $marcoIntroducido" | tee -a $informeColor
-															echo "Entra el proceso P0$counter a memoria a partir del marco $marcoIntroducido" >> $informe
-														else
-															echo -e " Entra el proceso \e[1;3${colorines[$counter]}mP$counter\e[0m a memoria a partir del marco  $marcoIntroducido" | tee -a $informeColor
-															echo " Entra el proceso P$counter a memoria a partir del marco $marcoIntroducido" >> $informe
-													fi
-											fi
-											#dejaentraramemoria=$(($posic+1))
-											
-										else
-												
-												break	
-										
-										
-										fi
-										
-							
-										
-							#else 
-							
-								#dejaentraramemoria=$posic
-							fi
-					fi
-				done
-			if [[ $fef -eq 0 ]]
-				then
-					#ejecutando=${ordenados[$position]}
-					fef=1
-			fi
-		done
-		
-		#if [[ $opcionEjec = 1 ]]
-			#then
-				#echo "" | tee -a $informeColor
-				#echo "" >> $informe
-		#fi
+                    if [[ ${nMarcos[$counter]} -le $tamEspacioGrande ]]; then
+                        ((nProcMeter++))
+                        paraMeter[$nProcMeter]=$counter
+                        enMemoria[$counter]="dentro"
+                        for marcoNuevo in ${!espaciosMemoria[*]}; do
+                            if [[ ${espaciosMemoria[$marcoNuevo]} -ge ${nMarcos[$counter]} ]]; then
+                                procesosMemoria[$marcoNuevo]=$counter
+                                marcoIntroducido=$marcoNuevo
+                            fi
+                        done
+                        calcularEspacios
+                        fef=1
+                        if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+                            if [[ $prim -eq 0 ]]; then
+                                prim=1
+                            fi
+                            if [[ $counter -lt 10 ]]; then
+                                echo -e " Entra el proceso \e[1;3${colorines[$counter]}mP0$counter\e[0m a memoria a partir del marco $marcoIntroducido" | tee -a $informeColor
+                                echo "Entra el proceso P0$counter a memoria a partir del marco $marcoIntroducido" >> $informe
+                            else
+                                echo -e " Entra el proceso \e[1;3${colorines[$counter]}mP$counter\e[0m a memoria a partir del marco  $marcoIntroducido" | tee -a $informeColor
+                                echo " Entra el proceso P$counter a memoria a partir del marco $marcoIntroducido" >> $informe
+                            fi
+                        fi
+                    else
+                        break
+                    fi
+                fi
+            fi
+        done
+        if [[ $fef -eq 0 ]]; then
+			#ejecutando=${ordenados[$position]}
+			fef=1
+        fi
+    done
 }
+
 
 ############
 
@@ -3610,19 +3560,26 @@ actualizaCola(){
 
 mueveCola(){
 
-	u=0
-	until [[ ${cola[$u]} == "vacio" ]]; do
-		((u++))
-	done
-	((u--))
+	 u=0
+	 until [[ ${cola[$u]} == "vacio" ]]; do
+	 	((u++))
+	 done
+	 ((u--))
 	
-	for (( n=0; n<$u; n++ )); do
+	 for (( n=0; n<$u; n++ )); do
 			
-		m=$((n+1))
-		let cola[$n]=cola[$m]
-	done
+	 	m=$((n+1))
+	 	let cola[$n]=cola[$m]
+	 done
 		
 	cola[$n]="vacio"
+
+	# for ((n=0; n<$u; n++)); do
+    #     m=$((n+1))
+    #     cola[$n]=${cola[$m]}
+    # done
+
+    # unset cola[$n]
 
 }
 
@@ -3630,16 +3587,18 @@ mueveCola(){
 
 
 anadeCola(){
-	u=0;
+	 u=0;
 
-	u=0
-	until [[ ${cola[$u]} == "vacio" ]]
-		do
-			((u++))
-		done
-	cola[$u]=$1
-	((u++))
-	cola[$u]="vacio"
+	 u=0
+	 until [[ ${cola[$u]} == "vacio" ]]
+	 	do
+	 		((u++))
+	 	done
+	 cola[$u]=$1
+	 ((u++))
+	 cola[$u]="vacio"
+	#cola+=("$1")
+	#cola+=("vacio")
 }
 
 ###################################################################################################################################
@@ -3753,7 +3712,7 @@ function FCFS(){
 	done
 	i=0
 	
-	esperaconllegada=(); 					#Tiempo de espera acumulado
+	esperaConLlegada=(); 					#Tiempo de espera acumulado
 	esperaSinLlegada=();					#Tiempo de espera real
 	primerproceso=${ordenados[1]}			#El proceso que menos tiempo tarda en llegar
 	tSistema=0;								#El tiempo que tarda el primer proceso en llegar
@@ -3786,14 +3745,10 @@ function FCFS(){
 	printf "\n\n" >> $informe
 	printf "\n\n" >> $informeColor
 
-	for (( i = 0; i < numprocesos; i++ )); do
-		let tejecutando[$i]=0
-	done
-	i=0;
 
-	#Se acumula en su esperaconllegada el tiempo de llegada del primer proceso en llegar
+	#Se acumula en su esperaConLlegada el tiempo de llegada del primer proceso en llegar
 	for (( fef=1; fef<= $nProc; fef++ )); do
-		esperaconllegada[$fef]=$tSistema
+		esperaConLlegada[$fef]=$tSistema
 	done
 
 	##### Esto ya es el algoritmo #####
@@ -3849,7 +3804,6 @@ function FCFS(){
 			diagramaResumen
 			imprimeNRU
 			diagramaMemoria
-				#diagramaTiempo
 			lineaDeTiempo
 			if [[ $opcionEjec = 2 ]]; then
 				sleep $segEsperaEventos
@@ -3980,10 +3934,7 @@ function FCFS(){
 				then
 					meteEnMemoria
 					actualizaCola 2
-				#	echo "$ejecutando"
 					ejecutando=${cola[0]}
-				#	echo "$ejecutando"
-				#	read akjsdashdkadhf
 					mueveCola
 			fi
 
@@ -4010,7 +3961,6 @@ function FCFS(){
 			if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]
 				then
 					diagramaMemoria
-					#diagramaTiempo
 					lineaDeTiempo
 			fi
 
@@ -4036,7 +3986,7 @@ function FCFS(){
 
 	# Se da valor a esperaSinLlegada.
 	for (( counter=0; counter < $nProc; counter++ )); do
-		let esperaSinLlegada[$counter]=esperaconllegada[$counter]-tLlegada[$counter]
+		let esperaSinLlegada[$counter]=esperaConLlegada[$counter]-tLlegada[$counter]
 	done
 		
 	if [[ $opcionEjec = 1 ]]; then
