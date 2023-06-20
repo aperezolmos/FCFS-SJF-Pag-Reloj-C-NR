@@ -6,6 +6,12 @@
 # Cada vez que se dice que una variable es utilizada en X función, quiere decir que se utiliza por primera vez en esa función.
 # Luego puede utilizarse en más partes del programa.
 
+
+	# NOTA BORRAR -> La función imprimeNRU se ha eliminado completamente porque no mostraba información correcta/relevante y tardaba mucho en imprimir.
+	# Si se está lo suficientemente loca como para intentarlo, traerla de versiones anteriores (total, sus llamadas siguen comentadas), pero
+	# no creo porque voy a suspender.
+
+
 	# Colores
 	declare -r _sel='\e[46m'		# Fondo cyan para la selección de opciones. BORRAR O MODIFICAR
 	declare -r CAB='\e[48;5;213m' 	# Color cabecera inicio MODIFICAR
@@ -34,12 +40,14 @@
 	nProc=0; 				# Número total de procesos.
 	alg="FCFS"				# Algoritmo a utilizar (puede ser "FCFS" o "SJF").
 
-	# Globales auxiliares
-	counter=0;				# Utilizado en varias funciones como contador para bucles, etc.
-	letra="a";				# Utilizado en varias funciones que piden que se escriba s o n.
-	max=0;					# Para valores máximos que actúan como finalización de un bucle.
-	i=0;					# Contador para bucles, índice, etc.
-	fef=0;					# Utilizado en bucles.
+	# Globales auxiliares (utilizadas en varias funciones como contador para bucles, índices, valores máximos, etc.)
+	counter=0;
+	letra="a";
+	max=0;
+	i=0;
+	xx=0;
+	v=0;
+	o=0;
 	
 	# menuInicio
 	menuOpcion=0;			# Utilizada en la función menuInicio, para elegir el algoritmo, la ayuda o salir del programa.
@@ -50,33 +58,30 @@
 
 	# entradaFichero
 	ficheroIn=0; 			# Indica el nombre del fichero de entrada (con extensión .txt).
-	posic=0; 				#
-	fila=0;					#
-	maxFilas=0;				#
+	posic=0;
+	fila=0;
+	maxFilas=0;
 	fichSelect=0;	
 
-	#seleccionTipoEjecucion
+	# seleccionTipoEjecucion
 	segEsperaEventos=0		# Segundos de espera entre cada evento mostrado por pantalla.
 	opcionEjec=0			# Modo de ejecución del algoritmo (por eventos=1, automático=2, etc).
 
 	#FCFS
-	primerproceso=0;		# Proceso que llega primero.
 	tSistema=0;				# Tiempo actual del sistema.
-	nProcEnMemoria=0;		# Número de procesos en memoria.
 	seAcaba=0;
 	laMedia=0;				# Media calculada por la función 'media()'.
 
 	# Vectores
 	colorines=()					# Contiene el último dígito del color asignado a cada proceso. Utilizado en varias funciones para colorear los procesos.
 	ordenados=()					# Guarda el número de los procesos en orden de llegada.
-	reordenados=()					# Vector auxiliar para reordenar los procesos segun el algoritmo.
+	reordenados=()					# Vector auxiliar para reordenar los procesos según el algoritmo.
 	esperaConLlegada=()				# Tiempo de espera de cada proceso incluyendo el tiempo de llegada.
 	esperaSinLlegada=()				# Tiempo de espera de cada proceso sin incluir el tiempo de llegada.
 	tLlegada=();					# Recoge los tiempos de llegada.
 	tEjec=();						# Recoge los tiempos de ejecución.
 	tamProceso=();					# Recoge los tamaños de los procesos.
 	nMarcos=(); 					# Recoge la cantidad de marcos de cada proceso.
-	npagprocesos=();				# Recoge el número de páginas por proceso.
 	maxPags=();						# Recoge el número máximo de páginas de los procesos.
 	declare -A direcciones			# Recoge las direcciones de página de cada proceso.
 	declare -A paginas				# Recoge las páginas de cada proceso
@@ -85,8 +90,8 @@
 	tCambiosContexto=()            	# Tiempos en los que se producen los cambios de contexto.
 	tCambiosContexto[0]=0
 	nCambiosContexto=0;				# Número de cambios de contexto (índice para el vector 'tCambiosContexto').
-	primerproceso=0;				# Proceso que llega primero.
-	ejecutandoAntiguo=0;
+	ejecutandoAntiguo=0;			# Proceso que se estaba ejecutando antes. Se usa para mostrar la tabla de páginas de un proceso que acaba de finalizar.
+	cola=();
 
 	# calcularEspaciosMemoria
 	procesosMemoria=()			# Array que contiene los procesos que están actualmente asignados en memoria.
@@ -98,33 +103,12 @@
 	declare -A procesoTiempoMarcoPuntero		# Orden del puntero.
 	declare -A procesoTiempoMarcoBitsReloj		# Valores de bits de reloj.
 
-	#nru
-	declare -A paginasUso
-	declare -A paginasAux
-	declare -A paginasCola
-	declare -A paginasHistorial
-	declare -A contador
-	paginasCambiadas=();
-	marcosCambiados=();
-	npagaejecutar=();
-	npagejecutadas=();
+	# muestraTablaPaginas
+	nPagAEjecutar=();
+	nPagEjecutadas=();
 	contadorPag=();
-	contadorPagGlob=();
-	cola=();
-
-	#declaraciones de nru
-	pagina=0;
-	ii=0;
-	xx=0;
-	yy=0;
-	zz=0;
-	v=0;
-	o=0;
-	contadorMax=0;
-	posicionContadorMax=0;
-
+	
 ###################################################################################################################################
-
 
 
 ###################################################################################
@@ -206,7 +190,8 @@ function seleccionMenuInicio(){
 			seleccionInforme
 			seleccionEntrada
 			# function FCFS -> para tenerlo como guía al buscarlo. ir sustituyendo por ejecucion a medida que se hagan cambios.
-			FCFS
+			#FCFS
+			ejecucion
 			final
 			;;
 		2)	# Muestra la ayuda.
@@ -1647,6 +1632,8 @@ function reloj(){
             procesoTiempoMarcoBitsReloj[$1,$i,$j]=${bitReloj[$j]}
        done
 	done
+
+	fallos[$1]=$numeroFallos
 }
 
 ###################################################################################################################################
@@ -1703,6 +1690,7 @@ function imprimeCabeceraAlgoritmo(){
 # Muestra la tabla de procesos con sus respectivos parámetros (tiempos de llegada, ejecución, páginas, etc).
 function diagramaResumen(){
 
+	imprimeHuecosInformes 1 1
 	#echo -e " \e[1;30;41mResumen:\e[0m\e[30;46mT.lleg|T.ejec|T.Rest|T.Retor\e[0m\e[47m  \e[0m\e[30;44mT.Espera\e[0m\e[47m      \e[0m\e[30;47mEstado\e[0m\e[47m      \e[0m\e[30;41mDirecc-Páginas\e[0m" | tee -a $informeColor
 	echo -e " Ref Tll Tej nMar Tesp Tret Trej Mini Mfin Estado           Dirección-Página" | tee -a $informeColor
 	
@@ -1776,7 +1764,7 @@ function diagramaResumen(){
 		if [[ ${tLlegada[$ord]} -le $tSistema ]]; then
 			#	printf " %4u\e[0m" "${tiempoRestante[$ord]}" | tee -a $informeColor
 			if [[ ${tiempoRestante[$ord]} -eq 0 ]]; then
-				echo -n -e " \e[1;3${colorines[$ord]}mFinalizado\e[0m       " | tee -a $informeColor
+				echo -n -e " \e[1;3${colorines[$ord]}mFinalizado\e[0m      " | tee -a $informeColor
 				echo -n "Estado: Finalizado  " >> $informe
 			else		
 				if [[ ord -eq $ejecutando ]]; then			
@@ -1813,8 +1801,8 @@ function diagramaResumen(){
 			echo -n " "
 			
 			xx=0
-			         #         echo -n "|${npagejecutadas[$ord]}|"
-			for (( v = 1; v <  ${npagejecutadas[$ord]} ; v++ )); do
+			         #         echo -n "|${nPagEjecutadas[$ord]}|"
+			for (( v = 1; v <  ${nPagEjecutadas[$ord]} ; v++ )); do
 					
 				echo -ne "\e[1;3${colorines[$ord]}m${direcciones[$ord,$xx]}-\e[1;3${colorines[$ord]}m${paginas[$ord,$xx]}\e[0m" | tee -a $informeColor
 				echo -n " " | tee -a $informeColor
@@ -1824,7 +1812,7 @@ function diagramaResumen(){
 			done
 		if [[ ord -eq $ejecutando && ${tLlegada[$ord]} -le $tSistema && $finalizados -ne $nProc ]]; then
 
-		    for (( v = 0; v <=  ${npagaejecutar[$ord]} ; v++ )); do
+		    for (( v = 0; v <=  ${nPagAEjecutar[$ord]} ; v++ )); do
                 echo -ne "\e[4m\e[1;3${colorines[$ord]}m${direcciones[$ord,$xx]}-\e[1;3${colorines[$ord]}m${paginas[$ord,$xx]}\e[0m\e[0m" | tee -a $informeColor
                 echo -n " " | tee -a $informeColor
                 echo -n "${direcciones[$ord,$xx]}-${paginas[$ord,$xx]}" >> $informe
@@ -1839,7 +1827,7 @@ function diagramaResumen(){
                 ((xx++))
             done
 		else
- 			for (( v = 0; v <  ${npagaejecutar[$ord]} ; v++ )); do
+ 			for (( v = 0; v <  ${nPagAEjecutar[$ord]} ; v++ )); do
 				echo -ne "\e[4m\e[1;3${colorines[$ord]}m${direcciones[$ord,$xx]}-\e[1;3${colorines[$ord]}m${paginas[$ord,$xx]}\e[0m\e[0m" | tee -a $informeColor
 				echo -n " " | tee -a $informeColor
 				echo -n "${direcciones[$ord,$xx]}-${paginas[$ord,$xx]}" >> $informe
@@ -1858,7 +1846,7 @@ function diagramaResumen(){
 		echo "" >> $informe
 	done
 	resumenTMedios
-	imprimeCola
+	#imprimeCola
 }
 
 ###################################################################################################################################
@@ -1936,259 +1924,219 @@ function lineaDeTiempoCero(){
 ############
 
 # Imprime la línea de tiempo.
-lineaDeTiempo(){
+lineaDeTiempo() {
+  espacio=0
+  i=0
+  j=0
+  k=0
+  mod=0
+  espacios=()
+  previoCambio=0
+  color_bg=0
+  tiempoCambio=()
+  espaciosTotales=()
+  espaciosMenos=()
 
-	espacio=0
-	i=0
-	j=0
-	k=0
-	mod=0
-	espacios=()
-	previoCambio=0;
-	color_bg=0;
-	tiempoCambio=()
-	espaciosTotales=()
-	espaciosMenos=()
-	
-	filaTiemProc=""
-	filaTiemPag=""
-	filaTiemTiem=""
-	
-	colorProcDiagTiem=();
-	colorDiagTiem=();
-	n=0;
-	
-	colsTerminal=`tput cols`
-	longImprimeTiem=0;
-	veces=0;
-	imprimeAhora=0;
-	
-	for (( n=1; n<=$nProc; n++ )); do
-		contadorPag[$n]=0
-	done
-		
-	#Imprime los procesos
-	filaTiemProc="    |"
-	m=6
-	#	colorProcDiagTiem[$m]
-	for (( i=0; i<$nCambiosContexto; i++ )); do
-			
-		let j=i+1
-		
-		let tiempoCambio[j]=(tCambiosContexto[j]-tCambiosContexto[i])
-		let espaciosTotales[j]=tiempoCambio[j]*3
-		let espaciosMenos[j]=espaciosTotales[j]-3
-	
-		if [[ ${pEjecutados[$j]} -eq -1 ]]  #Si vale -1 no se imprime nada.
-			then
-				for ((n=0; n<${espaciosTotales[$j]}; n++)); do
-					filaTiemProc="${filaTiemProc} "
-					((m++))
-				done
-		else
-					if [[ ${pEjecutados[$j]} -lt 10 ]]
-						then
-							filaTiemProc="${filaTiemProc}P0${pEjecutados[$j]}"
-							proc=${pEjecutados[$j]}
-							colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
-							((m++))
-							colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
-                                                        ((m++))
-							colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
-                                                        ((m++))
-							colorProcDiagTiem[$m]="\e[0m"
-						else
-							filaTiemProc="${filaTiemProc}P${pEjecutados[$j]}"
-							proc=${pEjecutados[$j]}
-                                                        colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
-							((m++))
-                                                        colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
-                                                        ((m++))
-                                                        colorProcDiagTiem[$m]="\e[0m"
-					fi
-					for ((n=0; n<${espaciosMenos[$j]}; n++))
-						do
-							filaTiemProc="${filaTiemProc} "
-							((m++))
-						done
-		fi
-	done
+  filaTiemProc=""
+  filaTiemPag=""
+  filaTiemTiem=""
 
-	if [[ $finalizados -ne $nProc ]]
-		then
-			if [[ $ejecutando -lt 10 ]]
-				then
-					filaTiemProc="${filaTiemProc}P0$ejecutando"
-				#	proc=${pEjecutados[$j]}
-                                        colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
-					((m++))
-                                        colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
-                                        ((m++))
-					colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
-                                        ((m++))
-                                        colorProcDiagTiem[$m]="\e[0m"
+  colorProcDiagTiem=()
+  colorDiagTiem=()
+  n=0
 
-				else
-					filaTiemProc="${filaTiemProc}P$ejecutando"
-				#	 proc=${pEjecutados[$j]}
-                                                       # colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
-                                        colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
-                                        ((m++))
-                                        colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
-                                        ((m++))
+  colsTerminal=$(tput cols)
+  longImprimeTiem=0
+  veces=0
+  imprimeAhora=0
 
-                                                        colorProcDiagTiem[$m]="\e[0m"
+  for ((n = 1; n <= $nProc; n++)); do
+    contadorPag[$n]=0
+  done
 
-			fi
-		else
-			filaTiemProc="${filaTiemProc}   "
-	fi
-	filaTiemProc="${filaTiemProc}|"
-	
-	
-	#imprime la fila de las páginas
+  # Imprime los procesos
+  filaTiemProc="    |"
+  m=6
 
-	filaTiemPag=" BT |"
-	
-	for (( i=0; i<$nCambiosContexto; i++ ))
-		do
-			let j=i+1
-			if [[ ${pEjecutados[$j]} -eq -1 ]]  #Si vale -1 no se imprime nada.
-				then
-					for ((n=0; n<${espaciosTotales[$j]}; n++))
-						do
-							filaTiemPag="${filaTiemPag}-"
-						done
-				else
-					for ((n=0; n<${tiempoCambio[$j]}; n++))
-						do
-							filaTiemPag="${filaTiemPag}$(printf '%3u' "${paginasHistorial[${pEjecutados[$j]},${contadorPag[${pEjecutados[$j]}]}]}")"
-							let contadorPag[${pEjecutados[$j]}]=contadorPag[${pEjecutados[$j]}]+1
-						done
-			fi
-	#			filaTiemPag="${filaTiemPag}"
-		done
-		if [[ $ejecutando == "vacio" ]] || [[ $finalizados -eq $nProc ]]
-		then
-			filaTiemPag="${filaTiemPag}  -"
-		else
-			pag=${paginas[$ejecutando,0]}
-			printf -v paginillas "%3d" "$pag"
-			filaTiemPag="$filaTiemPag$paginillas"
-		fi
-		filaTiemPag="$filaTiemPag| T=$tSistema"
-  
-  
-  #imprime la fila de tiempos
+  for ((i = 0; i < $nCambiosContexto; i++)); do
+    let j=i+1
+
+    let tiempoCambio[j]=(tCambiosContexto[j]-tCambiosContexto[i])
+    let espaciosTotales[j]=tiempoCambio[j]*3
+    let espaciosMenos[j]=espaciosTotales[j]-3
+
+    if [[ ${pEjecutados[$j]} -eq -1 ]]; then
+      for ((n = 0; n < ${espaciosTotales[$j]}; n++)); do
+        filaTiemProc="${filaTiemProc} "
+        ((m++))
+      done
+    else
+      if [[ ${pEjecutados[$j]} -lt 10 ]]; then
+        filaTiemProc="${filaTiemProc}P0${pEjecutados[$j]}"
+        proc=${pEjecutados[$j]}
+        colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
+        ((m++))
+        colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
+        ((m++))
+        colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
+        ((m++))
+        colorProcDiagTiem[$m]="\e[0m"
+      else
+        filaTiemProc="${filaTiemProc}P${pEjecutados[$j]}"
+        proc=${pEjecutados[$j]}
+        colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
+        ((m++))
+        colorProcDiagTiem[$m]="\e[1;3${colorines[$proc]}m"
+        ((m++))
+        colorProcDiagTiem[$m]="\e[0m"
+      fi
+      for ((n = 0; n < ${espaciosMenos[$j]}; n++)); do
+        filaTiemProc="${filaTiemProc} "
+        ((m++))
+      done
+    fi
+  done
+
+  if [[ $finalizados -ne $nProc ]]; then
+    if [[ $ejecutando -lt 10 ]]; then
+      filaTiemProc="${filaTiemProc}P0$ejecutando"
+      colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
+      ((m++))
+      colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
+      ((m++))
+      colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
+      ((m++))
+      colorProcDiagTiem[$m]="\e[0m"
+    else
+      filaTiemProc="${filaTiemProc}P$ejecutando"
+      colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
+      ((m++))
+      colorProcDiagTiem[$m]="\e[1;3${colorines[$ejecutando]}m"
+      ((m++))
+      colorProcDiagTiem[$m]="\e[0m"
+    fi
+  else
+    filaTiemProc="${filaTiemProc}   "
+  fi
+  filaTiemProc="${filaTiemProc}|"
+
+  # Imprime la fila de las páginas
+  filaTiemPag=" BT |"
+
+  for ((i = 0; i < $nCambiosContexto; i++)); do
+    let j=i+1
+    if [[ ${pEjecutados[$j]} -eq -1 ]]; then
+      for ((n = 0; n < ${espaciosTotales[$j]}; n++)); do
+        filaTiemPag="${filaTiemPag}-"
+      done
+    else
+      for ((n = 0; n < ${tiempoCambio[$j]}; n++)); do
+        filaTiemPag="${filaTiemPag}$(printf '%3u' "${paginas[${pEjecutados[$j]},${contadorPag[${pEjecutados[$j]}]}]}")"
+        let contadorPag[${pEjecutados[$j]}]=contadorPag[${pEjecutados[$j]}]+1
+      done
+    fi
+  done
+
+  if [[ $ejecutando == "vacio" ]] || [[ $finalizados -eq $nProc ]]; then
+    filaTiemPag="${filaTiemPag}  -"
+  else
+    pag=${paginas[$ejecutando,0]}
+    printf -v paginillas "%3d" "$pag"
+    filaTiemPag="$filaTiemPag$paginillas"
+  fi
+  filaTiemPag="$filaTiemPag| T=$tSistema"
+
+  # Imprime la fila de tiempos
   filaTiemTiem="    |"
-	#  echo "${tCambiosContexto[*]}"
   forma=$((${#tCambiosContexto[*]}-1))
 
-  for (( n = 0; n <= ${tCambiosContexto[$forma]}; n++ ))
-	do
-		if [[ " ${tCambiosContexto[@]} " =~ " $n " ]]
-			then
-				printf -v tiempoOrdenado "%3d" "$n"
-			else
-				printf -v tiempoOrdenado "%3s" ""
-		fi
-		filaTiemTiem="$filaTiemTiem$tiempoOrdenado"
-	done
-	filaTiemTiem="${filaTiemTiem}|"
+  for ((n = 0; n <= ${tCambiosContexto[$forma]}; n++)); do
+    if [[ " ${tCambiosContexto[@]} " =~ " $n " ]]; then
+      printf -v tiempoOrdenado "%3d" "$n"
+    else
+      printf -v tiempoOrdenado "%3s" ""
+    fi
+    filaTiemTiem="$filaTiemTiem$tiempoOrdenado"
+  done
+  filaTiemTiem="${filaTiemTiem}|"
 
+  # Guarda los colores de páginas
+  for ((n = 1; n <= 7; n++)); do
+    colorDiagTiem[$n]="\e[0m"
+  done
 
-	
-		
-	
-	#guarda los colores de páginas
-	
-	for (( n=1; n<=7; n++ ))
-		do
-			colorDiagTiem[$n]="\e[0m"
-		done
-	n=6
-	for (( i=0; i<$nCambiosContexto; i++ ))
-		do
-			let j=i+1
-	#			color_bg="\e[1;4${colorines[${pEjecutados[$j]}]}m" 
-			if [[ ${pEjecutados[$j]} -eq -1 ]]  #Si vale -1 no se imprime nada.
-				then
-					for ((m=0; m<${espaciosTotales[$j]}; m++))
-						do
-							colorDiagTiem[$n]="\e[7m"
-							((n++))
-						done
-				else
-					for ((m=0; m<${tiempoCambio[$j]}; m++))
-						do
-							for (( o=1; o<=3; o++ ))
-								do
-									colorDiagTiem[$n]="\e[1;4${colorines[${pEjecutados[$j]}]}m"
-									((n++))
-								done
-							let contadorPag[${pEjecutados[$j]}]=contadorPag[${pEjecutados[$j]}]+1
-						done
-			fi
-		done
-  
+  n=6
+  for ((i = 0; i < $nCambiosContexto; i++)); do
+    let j=i+1
+    if [[ ${pEjecutados[$j]} -eq -1 ]]; then
+      for ((m = 0; m < ${espaciosTotales[$j]}; m++)); do
+        colorDiagTiem[$n]="\e[7m"
+        ((n++))
+      done
+    else
+      for ((m = 0; m < ${tiempoCambio[$j]}; m++)); do
+        for ((o = 1; o <= 3; o++)); do
+          colorDiagTiem[$n]="\e[1;4${colorines[${pEjecutados[$j]}]}m"
+          ((n++))
+        done
+        let contadorPag[${pEjecutados[$j]}]=contadorPag[${pEjecutados[$j]}]+1
+      done
+    fi
+  done
 
-		
-	longImprimeTiem=`expr length "$filaTiemPag"`
-	veces=0;
-	imprimeAhora=0;
-	
-	until [[ $longImprimeTiem -le 0 ]]
-		do
-			if [[ $longImprimeTiem -le $colsTerminal ]]
-				then
-					imprimeAhora=$longImprimeTiem
-				else
-					imprimeAhora=$colsTerminal
-			fi
-			
-			if [[ $veces -ne 0 ]]
-				then
-					echo ""  | tee -a $informeColor
-					echo "" >> $informe
-			fi
-			for ((n=1; n<= $imprimeAhora; n++))
-				do
-					let m=n+colsTerminal*veces
-					echo -n -e "${colorProcDiagTiem[$m]}" | tee -a $informeColor
-					printf '%c' "$filaTiemProc"  | tee -a $informeColor
-					printf '%c' "$filaTiemProc" >> $informe
-					filaTiemProc=${filaTiemProc#?}
-					echo -n -e "\e[0m" | tee -a $informeColor
-				done
-			echo ""  | tee -a $informeColor
-			echo "" >> $informe
-			for ((n=1; n<= $imprimeAhora; n++)) 
-				do
-					let m=n+colsTerminal*veces
-					echo -n -e "${colorDiagTiem[$m]}"  | tee -a $informeColor
-					printf '%c' "$filaTiemPag"  | tee -a $informeColor
-					printf '%c' "$filaTiemPag" >> $informe
-					filaTiemPag=${filaTiemPag#?}
-					echo -n -e "\e[0m"  | tee -a $informeColor
-				done
-			echo ""  | tee -a $informeColor
-			echo "" >> $informe		
-			for ((n=1; n<= $imprimeAhora; n++))
-				do
-					let m=n+colsTerminal*veces
-					echo -n -e "${colorProcDiagTiem[$m]}" | tee -a $informeColor
-					printf '%c' "$filaTiemTiem" | tee -a $informeColor
-					printf '%c' "$filaTiemTiem" >> $informe
-					filaTiemTiem=${filaTiemTiem#?}
-					echo -n -e "\e[0m" | tee -a $informeColor
-				done
-			echo "" | tee -a $informeColor
-			echo "" >> $informe
-			((veces++))
-			let longImprimeTiem=longImprimeTiem-colsTerminal
-		done
+  longImprimeTiem=$(expr length "$filaTiemPag")
+  veces=0
+  imprimeAhora=0
 
+  until [[ $longImprimeTiem -le 0 ]]; do
+    if [[ $longImprimeTiem -le $colsTerminal ]]; then
+      imprimeAhora=$longImprimeTiem
+    else
+      imprimeAhora=$colsTerminal
+    fi
+
+    if [[ $veces -ne 0 ]]; then
+      echo "" | tee -a $informeColor
+      echo "" >> $informe
+    fi
+    for ((n = 1; n <= $imprimeAhora; n++)); do
+      let m=n+colsTerminal*veces
+      echo -n -e "${colorProcDiagTiem[$m]}" | tee -a $informeColor
+      printf '%c' "$filaTiemProc" | tee -a $informeColor
+      printf '%c' "$filaTiemProc" >> $informe
+      filaTiemProc=${filaTiemProc#?}
+      echo -n -e "\e[0m" | tee -a $informeColor
+    done
+    echo "" | tee -a $informeColor
+    echo "" >> $informe
+    for ((n = 1; n <= $imprimeAhora; n++)); do
+      let m=n+colsTerminal*veces
+      echo -n -e "${colorDiagTiem[$m]}" | tee -a $informeColor
+      printf '%c' "$filaTiemPag" | tee -a $informeColor
+      printf '%c' "$filaTiemPag" >> $informe
+      filaTiemPag=${filaTiemPag#?}
+      echo -n -e "\e[0m" | tee -a $informeColor
+    done
+    echo "" | tee -a $informeColor
+    echo "" >> $informe
+    for ((n = 1; n <= $imprimeAhora; n++)); do
+      let m=n+colsTerminal*veces
+      echo -n -e "${colorProcDiagTiem[$m]}" | tee -a $informeColor
+      printf '%c' "$filaTiemTiem" | tee -a $informeColor
+      printf '%c' "$filaTiemTiem" >> $informe
+      filaTiemTiem=${filaTiemTiem#?}
+      echo -n -e "\e[0m" | tee -a $informeColor
+    done
+    echo "" | tee -a $informeColor
+    echo "" >> $informe
+    ((veces++))
+    let longImprimeTiem=longImprimeTiem-colsTerminal
+  done
+
+  echo "" | tee -a $informeColor
+  echo "" >> $informe
 }
+
 
 ############
 
@@ -2198,7 +2146,7 @@ diagramaMemoria(){
 	#Memoria:  |--.--.--.--.--.--.--.--.--.--.--.--.--.--.--.|
 	#          |0              5                    12       |14
 
-
+	imprimeHuecosInformes 1 1
 	espaciosPintar=0;
 	faltaPintar=0;
 	
@@ -2589,708 +2537,105 @@ diagramaMemoria(){
 
 ############
 
-nru(){
+muestraTablaPaginas() {
 
-	pagina=0;
-	ii=0;
-	xx=0;
-	yy=0;
-	zz=0;
-	v=0;
-	o=0;
-	contadorMax=0;
-	posicionContadorMax=0;
-	
-	yy=$(($zz+${npagejecutadas[$ejecutandoAntiguo]}))
-	pagina=${paginasCola[$ejecutandoAntiguo,$yy]}
+  if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+    filasPaginas=$(
+      echo -n -e "    "
+      for ((p = 0; p < ${tEjec[$ejecutandoAntiguo]}; p++)); do
+        printf " %9s" "${paginas[$ejecutandoAntiguo,$p]}"
+      done
+    )
 
-	while [[ $zz -lt ${npagaejecutar[$ejecutandoAntiguo]} && $pagina != "s" ]]
-		do
-
-			while [[ $ii -lt ${nMarcos[$ejecutandoAntiguo]} && $zz -lt ${npagaejecutar[$ejecutandoAntiguo]} && $pagina != "s" ]]
-
-				do
-					if [[ ${paginasUso[$ejecutandoAntiguo,$ii]} = $pagina ]]
-						then
-							paginasUso[$ejecutandoAntiguo,$ii]=$pagina
-							paginasCambiadas[$zz]=$pagina
-							paginasHistorial[$ejecutandoAntiguo,${contadorPagGlob[$ejecutandoAntiguo]}]=$pagina
-							let contadorPagGlob[$ejecutandoAntiguo]=contadorPagGlob[$ejecutandoAntiguo]+1
-							marcosCambiados[$zz]=$ii
-							sumacontadores $ii
-							((zz++))
-							yy=$(($zz+${npagejecutadas[$ejecutandoAntiguo]}))
-							pagina=${paginasCola[$ejecutandoAntiguo,$yy]}
-							ii=0
-						else
-							if [[ ${paginasUso[$ejecutandoAntiguo,$ii]} == "vacio" ]]
-								then
-									paginasUso[$ejecutandoAntiguo,$ii]=$pagina
-									paginasCambiadas[$zz]=$pagina
-									paginasHistorial[$ejecutandoAntiguo,${contadorPagGlob[$ejecutandoAntiguo]}]=$pagina
-									let contadorPagGlob[$ejecutandoAntiguo]=contadorPagGlob[$ejecutandoAntiguo]+1
-									marcosCambiados[$zz]=$ii
-									sumacontadores $ii
-									fallos[$ejecutandoAntiguo]=$((${fallos[$ejecutandoAntiguo]}+1))
-									((zz++))
-									yy=$(($zz+${npagejecutadas[$ejecutandoAntiguo]}))
-									pagina=${paginasCola[$ejecutandoAntiguo,$yy]}
-									ii=0
-								else
-									((ii++))
-							fi
-					fi
-				done
-			ii=0
-
-			if [[ $zz -lt ${npagaejecutar[$ejecutandoAntiguo]} && $pagina != "s" ]]
-				then
-					calculaNRU $ejecutandoAntiguo
-					paginasUso[$ejecutandoAntiguo,$posicionContadorMax]=$pagina
-					paginasCambiadas[$zz]=$pagina
-					paginasHistorial[$ejecutandoAntiguo,${contadorPagGlob[$ejecutandoAntiguo]}]=$pagina
-					let contadorPagGlob[$ejecutandoAntiguo]=contadorPagGlob[$ejecutandoAntiguo]+1
-					marcosCambiados[$zz]=$posicionContadorMax
-					sumacontadores $posicionContadorMax
-					fallos[$ejecutandoAntiguo]=$((${fallos[$ejecutandoAntiguo]}+1))
-			fi		
-
-			((zz++))			
-			yy=$(($zz+${npagejecutadas[$ejecutandoAntiguo]}))
-			pagina=${paginasCola[$ejecutandoAntiguo,$yy]}
-		done
-
-
-
-	if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]
-		then
-			filasPaginas=$(
-			echo -n -e "    "
-			for (( p = 0; p < ${tEjec[$ejecutandoAntiguo]}; p++ ))
-			do
-				printf " %9s" "${paginas[$ejecutandoAntiguo,$p]}"
-			done
-			)
-
-			filasMarcos=()
-			for (( m = 0; m < ${nMarcos[$ejecutandoAntiguo]}; m++ ))
-			do
-				filasMarcos[$m]=$(
-				r=-1
-		        	if [[ -z ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} ]] || [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq -1 ]]
-                                        then
-                                                printf " "
-                                                if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]
-                                		        then
-                                               		printf "%4s" "sM$m"
-                                        else
-                                                printf "%3s" "M$m"
-
-                                       		 fi
-						
-						
-                                        else
-                                                 printf " "
-                                                 if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]
-                                        		then
-                                                	echo -n -e "s"
-                                        	 fi
-                                                 printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBitsReloj[$ejecutandoAntiguo,$r,$m]}"
-                                 fi
-                                 echo -n -e "f"
-
-
-				for (( r = 0; r < ${tEjec[$ejecutandoAntiguo]}; r++ ))
-				do
-
-					# Si el marco está vacio
-					if [[ -z ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} ]] || [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq -1 ]]
-					then
-						printf " %6s"
-						                                        if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]
-                                        then
-                                                printf "%4s" "sM$m"
-					else
-						printf "%3s" "M$m"
-                                        fi
-
-					else
-						printf " "
-						                                        if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]
-                                        then
-                                                echo -n -e "s"
-                                        fi
-
-						printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBitsReloj[$ejecutandoAntiguo,$r,$m]}"
-					fi
-					echo -n -e "f"
-				done
-				)
-			done
-			caracterInicialPaginas=0
-			caracterInicialMarcos=()
-			for (( i = 0; i < ${nMarcos[$ejecutandoAntiguo]}; i++ ))
-			do
-				caracterInicialMarcos[$i]=0
-			done
-			informeResumen=$(
-			echo -e -n "\e[1;3${colorines[$ejecutandoAntiguo]}m"
-			colsTerminal=`tput cols`
-			while [[ $caracterInicialPaginas -lt ${#filasPaginas} ]]
-			do
-				caracterDos=0
-				for (( caracter = $caracterInicialPaginas; caracterDos < $colsTerminal; caracter++ ))
-				do
-					echo -n "${filasPaginas:$caracter:1}"
-					((caracterInicialPaginas++))
-					((caracterDos++))
-				done
-				echo
-
-				for (( mar = 0; mar < ${nMarcos[$ejecutandoAntiguo]}; mar++ ))
-				do
-					caracterDos=0
-                                	for (( caracter = ${caracterInicialMarcos[$mar]}; caracterDos < $colsTerminal; caracter++ ))
-                                		do
-							cadena=${filasMarcos[$mar]}
-                                        		letra="${cadena:$caracter:1}"
-							if [[ "$letra" == "s" ]]
-							then
-								echo -e -n "\e[4m"
-							elif [[ "$letra" == "f" ]]
-							then
-								echo -e -n "\e[24m"
-							else
-								echo -n "$letra"
-                                                       		((caracterDos++))
-							fi
-							((caracterInicialMarcos[$mar]++))
-                                		done
-                                		echo -e "\e[24m"
-				done
-				
-			done
-
-	
-	echo -n -e "\e[0m"
-			)
-	echo -n -e "$informeResumen" | tee -a $informeColor
-	echo -n "$informeResumen" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" >> $informe	
-	fi
-		
-	#imprimeNRU
-}
-
-###################################################################################################################################
-
-# Calcula la posición del marco de memoria del proceso '$1' que tiene el contador más alto. -> BORRAR??? no es mi algoritmo
-function calculaNRU(){
-	contadorMax=0
-	posicionContadorMax=0
-	for (( o = 0; o < ${nMarcos[$1]}; o++  )); do
-		
-		if [[ $contadorMax -lt ${contador[$1,$o]} ]]; then
-			contadorMax=${contador[$1,$o]}
-			posicionContadorMax=$o
-		fi
-	done
-}
-
-###################################################################################################################################
-
-# No modificada mucho pero el function es para buscarla mas facil.
-function imprimeNRU(){
-
-	m=0;
-	marcosPintados=0;
-	memPintada=0;
-
-	coloresNRU=();
-	coloresNRUMarc=();
-
-	filaProc=""
-	filaProcInf=""
-	filaMarc=""
-	filaMarcInf=""
-	filaPag=""
-	filaPagInf=""
-	filaDir=""
-	filaDirInf=""
-	filaCont=""
-	filaContInf=""
-
-	colsTerminal=`tput cols`
-	longImprimeNRU=0
-	
-	# Imprime la fila de procesos.
-	
-	marcosPintados=0
-
-    for (( marcoNuevo = 0; marcoNuevo < $marcosMem; marcoNuevo++ )); do
-                        
-		if [[ -n "${procesosMemoria[$marcoNuevo]}" ]]; then			# Si el marco de memoria actual no está vacío...
-                                        
-			ord=${procesosMemoria[$marcoNuevo]}						# Se guarda el número del marco en la variable 'ord'.
-            if [[ $ord -lt 10 ]]; then
-                filaProc="${filaProc} P0$ord-"						# Se añade al string 'filaProc' el número del proceso.
-            else
-                filaProc="${filaProc} P$ord-"
-            fi
-			# Sea agregan guiones adicionales dependiendo del número de marcos que ocupa el proceso ('nMarcos[$ord]').
-            for (( i = 1; i < ${nMarcos[$ord]}; i++)); do
-                filaProc="${filaProc}-----"
-            done
-			# Se actualiza 'marcoNuevo' para saltar los marcos que ya están ocupados por el proceso actual.
-            marcoNuevo=$(($marcoNuevo+${nMarcos[$ord]}-1))			
-        else							
-            filaProc="${filaProc} ----"		# Si el marco de memoria actual está vacío, se agregan guiones indicando los espacios en blanco.
+    filasMarcos=()
+    for ((m = 0; m < ${nMarcos[$ejecutandoAntiguo]}; m++)); do
+      filasMarcos[$m]=$(
+        r=-1
+        if [[ -z ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} ]] || [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq -1 ]]; then
+          printf " "
+          if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then
+            printf "%4s" "sM$m"
+          else
+            printf "%3s" "M$m"
+          fi
+        else
+          printf " "
+          if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then
+            echo -n -e "s"
+          fi
+          printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBitsReloj[$ejecutandoAntiguo,$r,$m]}"
         fi
+        echo -n -e "f"
+
+        for ((r = 0; r < ${tEjec[$ejecutandoAntiguo]}; r++)); do
+          # Si el marco está vacio
+          if [[ -z ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} ]] || [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq -1 ]]; then
+            printf " %6s"
+            if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then
+              printf "%4s" "sM$m"
+            else
+              printf "%3s" "M$m"
+            fi
+          else
+            printf " "
+            if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then
+              echo -n -e "s"
+            fi
+            printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBitsReloj[$ejecutandoAntiguo,$r,$m]}"
+          fi
+          echo -n -e "f"
+        done
+      )
     done
 
-	# ANTERIOR?? -> borrar si eso.
-		#	for (( counter = 1; counter <= $nProc ; counter++ ))
-		#		do
-		#			ord=${ordenados[$counter]}
-		#			if [[ ${enMemoria[$ord]} == "dentro" ]]
-		#				then
-		#					if [[ $ord -lt 10 ]]
-		#						then
-		#							filaProc="${filaProc} P0$ord"
-		#						else
-		#							filaProc="${filaProc} P$ord"
-		#					fi
-		#					((marcosPintados++))
-		#					for (( m = 2; m <= ${nMarcos[$ord]} ; m++ ))
-		#						do
-		#							filaProc="${filaProc}-----"
-		#							((marcosPintados++))
-		#						done
-		#					
-		#					filaProc="${filaProc}-"
-		#			fi
-		#		done
-		#	if [[ $marcosPintados -lt $marcosMem ]]
-		#		then
-		#			filaProc="${filaProc} NADA"
-		#			((marcosPintados++))
-		#			until [[ $marcosPintados -eq $marcosMem ]]
-		#				do
-		#					filaProc="${filaProc}-----"
-		#					((marcosPintados++))
-		#				done
-		#	fi
-		#	filaProc="${filaProc}  "
-	#
-	
-	# Imprime la fila de marcos.
-	
-	marcosPintados=0
-
-	for (( counter = 1; counter <= $nProc ; counter++ )); do
-			
-		ord=${ordenados[$counter]}
-			
-		if [[ ${enMemoria[$ord]} == "dentro" ]]; then
-					
-			calculaNRU $ord		# BORRAR?? NO ES MI ALGORITMO.
-			filaMarc="${filaMarc}  M0  "
-			((marcosPintados++))
-			for (( m = 1; m < 20 ; m++ )); do
-				if [[ $m -lt 10 ]]; then
-					filaMarc="${filaMarc} M$m  "
-				else
-					filaMarc="${filaMarc} M$m "
-				fi
-				((marcosPintados++))
-			done
-		fi
-	done
-
-	if [[ $marcosPintados -lt $marcosMem ]]; then
-			
-		until [[ $marcosPintados -eq $marcosMem ]]; do	
-			filaMarc="  M0   M1   M2   M3   M4   M5   M6   M7   M8   M9   M10  M11  M12  M13  M14  M15  M16  M17  M18  M19"
-			((marcosPintados++))		
-		done
-	fi
-	filaMarc="${filaMarc} "
-	
-	#Imprime la fila de páginas. -> SOLO IMPRIME LA PRIMERA PÁGINA EL RESTO NADA???????????
-	
-	marcosPintados=0
-	
-	for (( counter = 1; counter <= $nProc; counter++ )); do
-			
-		ord=${ordenados[$counter]}
-		if [[ $ord -eq $ejecutando ]]; then
-
-			if [[ ${enMemoria[$ord]} == "dentro" ]]; then
-				
-				if [[ ${paginasUso[$ord,0]} == "vacio" ]]; then
-					filaPag="${filaPag}$(printf "%5u" "${paginas[$ord,0]}")"
-				else
-					filaPag="${filaPag}$(printf "%5u" "${paginasUso[$ord,0]}")"
-				fi
-				((marcosPintados++))
-				for (( m = 1; m < ${nMarcos[$ord]} ; m++ )); do
-					
-					if [[ ${paginasUso[$ord,$m]} == "vacio" ]]; then
-						filaPag="${filaPag}$(printf -- "-----")"
-					else
-						filaPag="${filaPag}$(printf "%5u" "$paginasUso[$ord,$m]}")"		
-					fi
-					((marcosPintados++))
-				done
-			fi
-		fi
-	done
-	
-	if [[ $marcosPintados -lt $marcosMem ]]; then
-		until [[ $marcosPintados -eq $marcosMem ]]; do
-			filaPag="${filaPag}-----"   
-			((marcosPintados++))
-		done
-	fi
-	filaPag="${filaPag}|"
-		
-	# Imprime la fila de las direcciones de memoria.
-	
-	marcosPintados=0
-	memPintada=0
-
-	for (( counter = 1; counter <= $nProc ; counter++ ))
-		do
-			ord=${ordenados[$counter]}
-			if [[ ${enMemoria[$ord]} == "dentro" ]]
-				then
-					if [[ $memPintada -ge 1000 ]]
-						then
-						filaDir="${filaDir}$(printf "%3u " "$memPintada")"
-						else
-						filaDir="${filaDir}$(printf " %3u " "$memPintada")"
-					fi
-					memPintada=$(($memPintada+${tamProceso[$ord]}))
-					((marcosPintados++))
-					for (( m = 1; m < ${nMarcos[$ord]} ; m++ ))
-						do
-							filaDir="${filaDir}     "
-							((marcosPintados++))
-						done
-			fi
-		done
-		
-	if [[ $marcosPintados -lt $marcosMem ]]
-		then
-			filaDir="${filaDir}$(printf " %3u" "$memPintada")"
-			((marcosPintados++))
-			until [[ $marcosPintados -eq $marcosMem ]]
-				do
-					filaDir="${filaDir}     "
-					((marcosPintados++))
-				done
-	fi
-	filaDir="${filaDir}|"
-	
-	
-	#Imprime la fila de contadores
-	
-	marcosPintados=0
-
-	for (( counter = 1; counter <= $nProc ; counter++ ))
-		do
-			ord=${ordenados[$counter]}
-			if [[ ${enMemoria[$ord]} == "dentro" ]]
-				then
-					if [[ ${paginasUso[$ord,0]} == "vacio" ]]
-						then
-							filaCont="${filaCont} [--]"
-						else
-							filaCont="${filaCont}$(printf " [%2u]" "${contador[$ord,0]}")"
-					fi
-					((marcosPintados++))
-					for (( m = 1; m < ${nMarcos[$ord]} ; m++ ))
-						do
-							if [[ ${paginasUso[$ord,$m]} == "vacio" ]]
-								then
-									filaCont="${filaCont} [--]"
-								else
-									filaCont="${filaCont}$(printf " [%2u]" "${contador[$ord,$m]}")"
-							fi
-							((marcosPintados++))
-						done
-					
-					#filaCont="${filaCont}"
-			fi
-		done
-	if [[ $marcosPintados -lt $marcosMem ]]
-		then
-			until [[ $marcosPintados -eq $marcosMem ]]
-				do
-					filaCont="${filaCont} [--]"
-					((marcosPintados++))
-				done
-	fi
-	filaCont="${filaCont}  "
-	
-	n=2
-    for (( marcoNuevo = 0; marcoNuevo < $marcosMem; marcoNuevo++ ))
-                do
-                        if [[ -n "${procesosMemoria[$marcoNuevo]}" ]]
-                                then
-                                        ord=${procesosMemoria[$marcoNuevo]}
-                                        for (( i = 0; i < ${nMarcos[$ord]}; i++))
-                                        do
-                                                for (( o=1; o<=5; o++ ))
-                                                do
-                                                       coloresNRU[$n]="\e[1;3${colorines[$ord]}m"
-                                                       ((n++))
-                                                done
-
-                                        done
-                                                marcoNuevo=$(($marcoNuevo+${nMarcos[$ord]}-1))
-
-                        else
-                        n=$((n+5))
-                fi
+    caracterInicialPaginas=0
+    caracterInicialMarcos=()
+    for ((i = 0; i < ${nMarcos[$ejecutandoAntiguo]}; i++)); do
+      caracterInicialMarcos[$i]=0
     done
 
-	# ANTIGUO???
-		#	for (( counter = 1; counter <= $nProc ; counter++ ))
-		#		do
-		#			ord=${ordenados[$counter]}
-		#			if [[ ${enMemoria[$ord]} == "dentro" ]]
-		#				then
-		#					for (( o=1; o<=4; o++ ))
-		#						do
-		#							coloresNRU[$n]="\e[1;3${colorines[$ord]}m"
-		#							((n++))
-		#						done
-		#					for (( m = 2; m <= ${nMarcos[$ord]} ; m++ ))
-		#						do
-		#							coloresNRU[$n]="\e[1;3${colorines[$ord]}m"
-		#							((n++))
-		#							for (( o=1; o<=4; o++ ))
-		#								do
-		#									coloresNRU[$n]="\e[1;3${colorines[$ord]}m"
-		#									((n++))
-		#								done
-		#						done
-		#					
-		#					coloresNRU[$n]="\e[0m"
-		#					((n++))
-		#			fi
-		#		done
-		
-		#AÑADIR LO DE COLORES DE MARCOS Y ESO
-	
-		#	marcosPintados=0
-		#	n=2
-		#	for (( counter = 1; counter <= $nProc ; counter++ ))
-		#		do
-		#			ord=${ordenados[$counter]}
-		#			if [[ ${enMemoria[$ord]} == "dentro" ]]
-		#				then
-		#					calculaNRU $ord
-		#					if [[ ${paginasUso[$ord,0]} == "vacio" ]]
-		#						then
-		#							for (( o=1; o<=4; o++ ))
-		#								do
-		#									coloresNRUMarc[$n]="\e[1;3${colorines[$ord]}m"
-		#									((n++))
-		#								done
-		#						else
-		#							if [[ $posicionContadorMax -eq 0 ]]
-		#								then
-		#									for (( o=1; o<=4; o++ ))
-		#										do
-		#											coloresNRUMarc[$n]="\e[0;7;4${colorines[$ord]}m"
-		#											((n++))
-		#										done
-		#								else
-		#									for (( o=1; o<=4; o++ ))
-		#										do
-		#											coloresNRUMarc[$n]="\e[1;3${colorines[$ord]}m"
-		#											((n++))	
-		#										done
-		#							fi
-		#					fi
-		#					for (( m = 1; m < ${nMarcos[$ord]} ; m++ ))
-		#						do
-		#							coloresNRUMarc[$n]="\e[1;3${colorines[$ord]}m"
-		#							((n++))
-		#							if [[ ${paginasUso[$ord,0]} == "vacio" ]]
-		#								then
-		#									for (( o=1; o<=4; o++ ))
-		#										do
-		#											coloresNRUMarc[$n]="\e[1;3${colorines[$ord]}m"
-		#											((n++))
-		#										done
-		#								else
-		#									if [[ $posicionContadorMax -eq $m ]]
-		#										then
-		#											for (( o=1; o<=4; o++ ))
-		#												do
-		#													coloresNRUMarc[$n]="\e[1;7;3${colorines[$ord]}m"
-		#													((n++))
-		#												done
-		#										else
-		#											for (( o=1; o<=4; o++ ))
-		#												do
-		#													coloresNRUMarc[$n]="\e[1;3${colorines[$ord]}m"
-		#													((n++))
-		#												done
-		#									fi
-		#							fi	
-		#						done
-		#					
-		#					coloresNRUMarc[$n]="\e[0m"
-		#					((n++))
-		#			fi
-		#		done
-		#	resumenTMedios
-	#
-	#	Proceso:     P01------ P03-------------------------- P14------ NADA----- +
-	#	Nº Marco:    M0   M1   M0   M1   M2   M3   M4   M70  M0   M1   --   --   +
-	#	Página:     |63  |34  |568 |57  |77  |32  |4   |5   |8888|764 |----|----|+
-	#	Dir. Mem.:  |0        |200                          |7200     |7400     |+
-	#	Contador:    [ 1] [ 0] [ 1] [ 3] [ 6] [ 0] [ 5] [49] [12] [ 0] [--] [--] +
+    informeResumen=$(
+      echo -e -n "\e[1;3${colorines[$ejecutandoAntiguo]}m"
+      colsTerminal=`tput cols`
+      while [[ $caracterInicialPaginas -lt ${#filasPaginas} ]]; do
+        caracterDos=0
+        for ((caracter = $caracterInicialPaginas; caracterDos < $colsTerminal; caracter++)); do
+          echo -n "${filasPaginas:$caracter:1}"
+          ((caracterInicialPaginas++))
+          ((caracterDos++))
+        done
+        echo
 
-	longImprimeNRU=`expr length "$filaProc"` #FILA PROC O FILA PAG????
-	let longImprimeNRU=longImprimeNRU+12
-	veces=0;
-	imprimeAhora=0;
-	
-	echo " Proceso:     $filaProc" >> $informe
-	echo " Nº Marco:    $filaMarc" >> $informe
-	echo " Página:     $filaPag" >> $informe
-	echo " Dir. Mem.:   $filaDir" >> $informe
-	echo " Contador:    $filaCont" >> $informe
-	
-	until [[ $longImprimeNRU -le 0 ]]; do
+        for ((mar = 0; mar < ${nMarcos[$ejecutandoAntiguo]}; mar++)); do
+          caracterDos=0
+          for ((caracter = ${caracterInicialMarcos[$mar]}; caracterDos < $colsTerminal; caracter++)); do
+            cadena=${filasMarcos[$mar]}
+            letra="${cadena:$caracter:1}"
+            if [[ "$letra" == "s" ]]; then
+              echo -e -n "\e[4m"
+            elif [[ "$letra" == "f" ]]; then
+              echo -e -n "\e[24m"
+            else
+              echo -n "$letra"
+              ((caracterDos++))
+            fi
+            ((caracterInicialMarcos[$mar]++))
+          done
+          echo -e "\e[24m"
+        done
 
-		if [[ $longImprimeNRU -le $colsTerminal ]]; then
-			imprimeAhora=$(($longImprimeNRU-2))
-		else
-			imprimeAhora=$(($colsTerminal-2))
-		fi
-			
-		if [[ $veces -eq 0 ]]; then
-					
-			let imprimeAhora=imprimeAhora-0
-					
-			echo -n -e " Proceso  :   " | tee -a $informeColor
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=n+colsTerminal*veces
-							echo -n -e "${coloresNRU[$m]}" | tee -a $informeColor
-							printf '%c' "$filaProc" | tee -a $informeColor
-							filaProc=${filaProc#?}
-							echo -n -e "\e[0m" | tee -a $informeColor
-			done
-			echo "" | tee -a $informeColor
-					
-			echo -n -e " Nº Marco :   " | tee -a $informeColor
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=n+colsTerminal*veces
-							echo -n -e "${coloresNRU[$m]}" | tee -a $informeColor
-							printf '%c' "$filaMarc" | tee -a $informeColor
-							filaMarc=${filaMarc#?}
-							echo -n -e "\e[0m" | tee -a $informeColor
-			done
-			echo "" | tee -a $informeColor
-					
-			echo -n -e " Página   :  " | tee -a $informeColor
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=n+colsTerminal*veces
-							echo -n -e "${coloresNRU[$m]}" | tee -a $informeColor
-							printf '%c' "$filaPag"  | tee -a $informeColor
-							filaPag=${filaPag#?}
-							echo -n -e "\e[0m" | tee -a $informeColor
-			done
-			echo ""  | tee -a $informeColor
-					
-			echo -n -e " Dir. Mem.:   " | tee -a $informeColor
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=n+colsTerminal*veces
-							echo -n -e "${coloresNRU[$m]}" | tee -a $informeColor
-							printf '%c' "$filaDir" | tee -a $informeColor
-							filaDir=${filaDir#?}
-							echo -n -e "\e[0m" | tee -a $informeColor
-			done
-			echo ""  | tee -a $informeColor
-					
-			echo -n -e " Contador :   "  | tee -a $informeColor
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=n+colsTerminal*veces
-							echo -n -e "${coloresNRU[$m]}"  | tee -a $informeColor
-							printf '%c' "$filaCont" | tee -a $informeColor
-							filaCont=${filaCont#?}
-							echo -n -e "\e[0m"  | tee -a $informeColor
-			done
-			echo "" | tee -a $informeColor
+      done
+      echo -n -e "\e[0m"
+    )
 
-		else
-			echo "" | tee -a $informeColor
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=(colsTerminal*veces)+n-12
-							echo -n -e "${coloresNRU[$m]}" | tee -a $informeColor
-							printf '%c' "$filaProc" | tee -a $informeColor
-							filaProc=${filaProc#?}
-							echo -n -e "\e[0m"  | tee -a $informeColor
-			done
-			echo "" | tee -a $informeColor
-					
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=(colsTerminal*veces)+n-12
-							echo -n -e "${coloresNRUMarc[$m]}" | tee -a $informeColor
-							printf '%c' "$filaMarc" | tee -a $informeColor
-							filaMarc=${filaMarc#?}
-							echo -n -e "\e[0m" | tee -a $informeColor
-			done
-			echo "" | tee -a $informeColor
-					
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=(colsTerminal*veces)+n-12
-							echo -n -e "${coloresNRU[$m]}" | tee -a $informeColor
-							printf '%c' "$filaPag" | tee -a $informeColor
-							filaPag=${filaPag#?}
-							echo -n -e "\e[0m" | tee -a $informeColor
-			done
-			echo "" | tee -a $informeColor
-					
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=(colsTerminal*veces)+n-12
-							echo -n -e "${coloresNRU[$m]}"  | tee -a $informeColor
-							printf '%c' "$filaDir" | tee -a $informeColor
-							filaDir=${filaDir#?}
-							echo -n -e "\e[0m" | tee -a $informeColor
-			done
-			echo "" | tee -a $informeColor
-					
-			for ((n=1; n<= $imprimeAhora; n++))
-						do
-							let m=(colsTerminal*veces)+n-12
-							echo -n -e "${coloresNRU[$m]}" | tee -a $informeColor
-							printf '%c' "$filaCont" | tee -a $informeColor
-							filaCont=${filaCont#?}
-							echo -n -e "\e[0m"  | tee -a $informeColor
-			done
-			echo "" | tee -a $informeColor
-		fi
-		((veces++))
-		let longImprimeNRU=longImprimeNRU-colsTerminal
-	done
+    echo -n -e "$informeResumen" | tee -a $informeColor
+    echo -n "$informeResumen" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" >>$informe
+  fi
+
+  # imprimeNRU
 }
 
-############
+###################################################################################################################################
 
 # Muestra un resumen de los tiempos de ejecución y fallos de página de cada proceso al finalizar el algoritmo.
 function resumenFinal(){
@@ -3394,23 +2739,11 @@ sumaTiempoEspera(){
 ############
 
 sumaNPaginas(){
-	let npagejecutadas[$ejecutando]=npagejecutadas[$ejecutando]+npagaejecutar[$ejecutando]
-	npagaejecutar[$ejecutando]=0
+	let nPagEjecutadas[$ejecutando]=nPagEjecutadas[$ejecutando]+nPagAEjecutar[$ejecutando]
+	nPagAEjecutar[$ejecutando]=0
 }
 
-############
 
-sumacontadores(){
-	for (( o = 0; o < ${nMarcos[$ejecutandoAntiguo]}; o++  ))
-		do
-			if [[ $o -ne $1 ]]
-				then
-					contador[$ejecutandoAntiguo,$o]=$((${contador[$ejecutandoAntiguo,$o]}+1))
-				else
-					contador[$ejecutandoAntiguo,$o]=0
-			fi
-		done
-}
 
 
 
@@ -3419,12 +2752,10 @@ sumacontadores(){
 ####################################
 
 meteEnMemoria() {
-    nProcMeter=0
-    paraMeter=()
-    n=0
-    prim=0
-
+    nProcMeter=0		# Número de procesos que pueden meterse en memoria.
+    colaMemoria=()		# Cola de entrada en memoria. Procesos que han llegado al sistema y se quiere ver si caben en memoria principal.
     fef=0
+
     while [ $fef -eq 0 ]; do
         if [ $exe -eq 0 ]; then
             let tSistema=tSistema+1 # Si no ha habido ninguna ejecución en la lista anterior ir al siguiente turno
@@ -3433,8 +2764,7 @@ meteEnMemoria() {
             sumaTiempoEspera 1
         fi
         exe=0
-        nProcMeter=0
-        dejaentraramemoria=1
+
         for ((posic = 1; posic <= $nProc; posic++)); do
             counter=${ordenados[$posic]}
             if [[ ${tiempoRestante[$counter]} -ne 0 ]] && [[ $tSistema -ge ${tLlegada[$counter]} ]]; then
@@ -3443,7 +2773,7 @@ meteEnMemoria() {
 
                     if [[ ${nMarcos[$counter]} -le $tamEspacioGrande ]]; then
                         ((nProcMeter++))
-                        paraMeter[$nProcMeter]=$counter
+                        colaMemoria[$nProcMeter]=$counter
                         enMemoria[$counter]="dentro"
                         for marcoNuevo in ${!espaciosMemoria[*]}; do
                             if [[ ${espaciosMemoria[$marcoNuevo]} -ge ${nMarcos[$counter]} ]]; then
@@ -3454,9 +2784,7 @@ meteEnMemoria() {
                         calcularEspaciosMemoria
                         fef=1
                         if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
-                            if [[ $prim -eq 0 ]]; then
-                                prim=1
-                            fi
+
                             if [[ $counter -lt 10 ]]; then
                                 echo -e " Entra el proceso \e[1;3${colorines[$counter]}mP0$counter\e[0m a memoria a partir del marco $marcoIntroducido" | tee -a $informeColor
                                 echo "Entra el proceso P0$counter a memoria a partir del marco $marcoIntroducido" >> $informe
@@ -3482,28 +2810,25 @@ meteEnMemoria() {
 
 actualizaCola(){
 		
-	for (( n=1; n<=$nProcMeter; n++ ))
-		do
-			if [[ ${tLlegada[${paraMeter[$n]}]} -ne $tSistema ]] && [ "${paraMeter[$n]}" != "v" ]
-				then
-					anadeCola ${paraMeter[$n]}
-					paraMeter[$n]="v"
-			fi
-		done
+	for (( n=1; n<=$nProcMeter; n++ )); do
+		if [[ ${tLlegada[${colaMemoria[$n]}]} -ne $tSistema ]] && [ "${colaMemoria[$n]}" != "v" ]; then
+			anadeCola ${colaMemoria[$n]}
+			colaMemoria[$n]="v"
+		fi
+	done
 	
-	if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]] && [[ $1 -ne 1 ]]
-		then
-			anadeCola $ejecutando
+	if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]] && [[ $1 -ne 1 ]]; then
+		anadeCola $ejecutando
 	fi
 	
-	for (( n=1; n<=$nProcMeter; n++ ))
-		do
-			if [[ ${tLlegada[${paraMeter[$n]}]} -eq $tSistema ]] && [ "${paraMeter[$n]}" != "v" ]
-				then
-					anadeCola ${paraMeter[$n]}
-					paraMeter[$n]="v"
-			fi
-		done
+	for (( n=1; n<=$nProcMeter; n++ )); do
+		if [[ ${tLlegada[${colaMemoria[$n]}]} -eq $tSistema ]] && [ "${colaMemoria[$n]}" != "v" ]; then
+			anadeCola ${colaMemoria[$n]}
+			colaMemoria[$n]="v"
+		fi
+	done
+
+	
 }
 
 ############
@@ -3554,33 +2879,42 @@ anadeCola(){
 
 # Función auxiliar para imprimir la cola de procesos.
 function imprimeCola(){
-	u=0
-	until [[ ${cola[$u]} == "vacio" ]]; do
-		((u++))
-	done
 	
-	# TODO ESTO COMENTADO ANTERIORMENTE
+	printf "\n\n\t%s" "COLA MEMORIA:  "
+	for elemento in "${colaMemoria[@]}"; do
+        printf "P%s - " "$elemento"
+    done
+	printf "\n\n"
 
-	echo "Proceso ejecutandose:"	
-	if [[ $ejecutando -lt 10 ]]
-	then
-		echo -n -e "\e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m " | tee -a $informeColor
-		echo -n "P0$ejecutando " >> $informe
-	else
-		echo -n -e "\e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m " | tee -a $informeColor
-		echo -n "P$ejecutando " >> $informe
-	fi
+	printf "\n\n\t%s" "COLA EJECUCION:  "
+	for elemento in "${cola[@]}"; do
+        printf "P%s - " "$elemento"
+    done
+	printf "\n\n"
+	
+	# u=0
+	# until [[ ${cola[$u]} == "vacio" ]]; do
+	# 	((u++))
+	# done
 
-	echo "Cola:"			
-	for ((n=0; n<$u; n++ )); do
-		if [[ ${cola[$n]} -lt 10 ]]; then
-			echo -n -e " \e[1;3${colorines[${cola[$n]}]}mP0${cola[$n]}\e[0m " | tee -a $informeColor
-			echo -n " P0${cola[$n]} " >> $informe
-		else
-			echo -n -e " \e[1;3${colorines[${cola[$n]}]}mP${cola[$n]}\e[0m " | tee -a $informeColor
-			echo -n " P${cola[$n]} " >> $informe
-		fi
-	done
+	# if [[ $ejecutando -lt 10 ]]
+	# then
+	# 	echo -n -e "\e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m " | tee -a $informeColor
+	# 	echo -n "P0$ejecutando " >> $informe
+	# else
+	# 	echo -n -e "\e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m " | tee -a $informeColor
+	# 	echo -n "P$ejecutando " >> $informe
+	# fi
+			
+	# for ((n=0; n<$u; n++ )); do
+	# 	if [[ ${cola[$n]} -lt 10 ]]; then
+	# 		echo -n -e " \e[1;3${colorines[${cola[$n]}]}mP0${cola[$n]}\e[0m " | tee -a $informeColor
+	# 		echo -n " P0${cola[$n]} " >> $informe
+	# 	else
+	# 		echo -n -e " \e[1;3${colorines[${cola[$n]}]}mP${cola[$n]}\e[0m " | tee -a $informeColor
+	# 		echo -n " P${cola[$n]} " >> $informe
+	# 	fi
+	# done
 }
 
 ###################################################################################################################################
@@ -3607,7 +2941,7 @@ function FCFS(){
 	if [[ ${tLlegada[${ordenados[1]}]} -gt 0 ]]; then			# Si el tiempo de llegada del proceso con menor tiempo de llegada es mayor que 0...
 
 		ejecutando=${ordenados[1]}								# El proceso que se va a ejecutar será el que tenga menor tiempo de llegada.
-		aumento=${tLlegada[$primerproceso]}						# 'aumento' toma el valor del tiempo de llegada del primer proceso (?).
+		aumento=${tLlegada[$ejecutando]}						# 'aumento' toma el valor del tiempo de llegada del primer proceso.
 		sumaTiempoEspera 1										# Se suma el tiempo de espera a los demás procesos.
 		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
 			clear
@@ -3712,10 +3046,8 @@ function FCFS(){
 			let tSistema=tSistema+tiempoRestante[$ejecutando]
 			let salida[$ejecutando]=$tSistema	#El momento de retorno será igual al momento de salida en el reloj
 			let duracion[$ejecutando]=salida[$ejecutando]-tLlegada[$ejecutando]
-			fin=1
-			indicador=1
 			aumento=${tiempoRestante[$ejecutando]}
-			npagaejecutar[$ejecutando]=${tiempoRestante[$ejecutando]}
+			nPagAEjecutar[$ejecutando]=${tiempoRestante[$ejecutando]}
 			let tEjecutando[$ejecutando]=tEjecutando[$ejecutando]+${tiempoRestante[$ejecutando]}
 			tiempoRestante[$ejecutando]=0
 			exe=1
@@ -3746,17 +3078,6 @@ function FCFS(){
 			((nCambiosContexto++))
 			tCambiosContexto[$nCambiosContexto]=$tSistema
 			pEjecutados[$nCambiosContexto]=$ejecutando
-
-			#Util para saber en cada pasada cuantos procesos hay en memoria
-			nProcEnMemoria=0;
-			for (( counter = 1; counter <= $nProc; counter++ ))
-				do
-					if [[ ${enMemoria[$counter]} == "dentro" ]]
-						then
-							let nProcEnMemoria=nProcEnMemoria+1
-					fi
-				done
-
 
 					if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]
 						then
@@ -3804,7 +3125,7 @@ function FCFS(){
 			fi
 			
 			
-			nru                ########################## I # M # P # O # R # T # A # N # T # E ###########################
+			muestraTablaPaginas                ########################## I # M # P # O # R # T # A # N # T # E ###########################
 			sumaNPaginas
 
 			if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]
@@ -3848,8 +3169,147 @@ function FCFS(){
 
 
 
+# Función que sustituirá a la ejecución normal si las pruebas salen correctamente..
+function ejecucion(){
+	
+	imprimeHuecosInformes 3 0
+	inicializaVariablesEjecucion
+	seleccionTipoEjecucion		# El usuario elige el modo en que se ejecutará el algorimo (por eventos, automático, etc).
+	imprimeHuecosInformes 2 0
+	clear
+
+	##### Esto ya es el algoritmo #####
+
+	ordenacion
+	llegaPrimerProceso
+
+	# Pasamos al resto de procesos.
+	ejecutando=${cola[0]}
+	mueveCola
+	
+	while [ $seAcaba -eq 0 ]; do
+		
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+			clear
+		fi
+		#ejecutando=${ordenados[$position]}
+			
+		if [ $finalizados -ne $nProc ]; then 	# Cambio de contexto.
+			tiemproceso=$tSistema
+		fi
+ 		
+		exe=1
+		let tSistema=tSistema+tiempoRestante[$ejecutando]
+		let salida[$ejecutando]=$tSistema	#El momento de retorno será igual al momento de salida en el reloj
+		let duracion[$ejecutando]=salida[$ejecutando]-tLlegada[$ejecutando]
+		aumento=${tiempoRestante[$ejecutando]}
+		nPagAEjecutar[$ejecutando]=${tiempoRestante[$ejecutando]}
+		let tEjecutando[$ejecutando]=tEjecutando[$ejecutando]+${tiempoRestante[$ejecutando]}
+		tiempoRestante[$ejecutando]=0
+		let finalizados=$finalizados+1
+		let memUtiliz=memUtiliz-${tamProceso[$ejecutando]}
+		enMemoria[$ejecutando]="salido"			#El valor "salido" quiere decir que el proceso ha estado en memoria y ha acabado, por lo que se ha sacado de allí
+		for marcoNuevo in ${!procesosMemoria[*]}; do
+			if [[ ${procesosMemoria[$marcoNuevo]} -eq $ejecutando ]]; then
+				unset procesosMemoria[$marcoNuevo]
+			fi
+		done
+		
+		calcularEspaciosMemoria
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+			imprimeCabeceraAlgoritmo
+			if [[ $ejecutando -lt 10 ]]; then
+				echo -e " El proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m ha finalizado y ha transcurrido este tiempo: $aumento" | tee -a $informeColor
+				echo " El proceso P0$ejecutando ha finalizado y ha transcurrido este tiempo: $aumento" >> $informe
+			else
+				echo -e " El proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m ha finalizado y ha transcurrido este tiempo: $aumento" | tee -a $informeColor
+				echo " El proceso P$ejecutando ha finalizado y ha transcurrido este tiempo: $aumento" >> $informe
+			fi
+		fi
+			
+		((nCambiosContexto++))
+		tCambiosContexto[$nCambiosContexto]=$tSistema
+		pEjecutados[$nCambiosContexto]=$ejecutando
+
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+			if [[ $ejecutando -lt 10 ]]; then
+				echo -e " \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" | tee -a $informeColor
+				echo " P0$ejecutando    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" >> $informe
+			else
+				echo -e " \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" | tee -a $informeColor
+				echo " P$ejecutando    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" >> $informe
+			fi
+		fi
+			
+		sumaTiempoEspera 0 #Función sumaTiempoEspera; aumenta el tiempo de espera acumulado de cada proceso
+		ejecutandoAntiguo=$ejecutando
+		#let position=position+1
+			
+		if [ $finalizados -ne $nProc ]; then
+
+			meteEnMemoria
+			actualizaCola 2
+			ejecutando=${cola[0]}
+			mueveCola
+			imprimeCola
+
+			until [ $ejecutando != "vacio" ]; do
+			meteEnMemoria
+			actualizaCola 2
+			ejecutando=${cola[0]}
+			mueveCola
+			imprimeCola
+			done
+		fi
 
 
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+			if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
+				if [[ $ejecutando -lt 10 ]]; then
+					echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
+					echo " Entra el proceso P0$ejecutando al procesador" >> $informe
+				else
+					echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
+					echo " Entra el proceso P$ejecutando al procesador" >> $informe
+				fi
+			fi
+			diagramaResumen
+		fi
+
+			
+			
+		muestraTablaPaginas                ########################## I # M # P # O # R # T # A # N # T # E ###########################
+		sumaNPaginas
+
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+			diagramaMemoria
+			lineaDeTiempo
+		fi
+
+		if [ $finalizados -eq $nProc ]; then	# Si todos los procesos terminados son igual a los procesos introducidos.
+			seAcaba=1
+		else	
+			if [[ $opcionEjec = 1 ]]; then
+				read -p " Pulse INTRO para continuar ↲ "
+			elif [[ $opcionEjec = 2 ]]; then
+				sleep $segEsperaEventos	
+			fi 
+		fi
+
+	done
+
+	# Se da valor a esperaSinLlegada.
+	for (( counter=0; counter < $nProc; counter++ )); do
+		let esperaSinLlegada[$counter]=esperaConLlegada[$counter]-tLlegada[$counter]
+	done
+		
+	if [[ $opcionEjec = 1 ]]; then
+		read -p " Pulse INTRO para continuar ↲ "
+	elif [[ $opcionEjec = 2 ]]; then
+		sleep $segEsperaEventos	
+	fi 
+	resumenFinal
+}
 
 
 
@@ -3860,100 +3320,138 @@ function FCFS(){
 function inicializaVariablesEjecucion(){
 
 	# Se inicializan por defecto las variables.
-	enMemoria=();														# Ver si los procesos están en memoria.
-	for (( counter = 1; counter <= $nProc; counter++ )); do
-		enMemoria[$counter]="fuera"										# "fuera" si no está, "dentro" si está, "salido" si ha terminado.
-	done
-
-	tiempoInicio=();
-	for (( counter = 1; counter <= $nProc; counter++ )); do
-		let tiempoInicio[$counter]=${tEjec[$counter]}
-	done
-
-	tiempoRestante=();
-	for (( counter = 1; counter <= $nProc; counter++ ));do
-		let tiempoRestante[$counter]=${tEjec[$counter]}
-	done
-		
-	tEjecutando=();														# Cuenta el tiempo ejecutando de cada proceso.
-	for (( i = 1; i <= $nProc; i++ )); do
-		let tEjecutando[$i]=0
-	done
-	
-	npagejecutadas=();
-	for (( i = 1; i <= $nProc; i++ )); do
-		let npagejecutadas[$i]=0
-	done
-		
-	npagaejecutar=();
-	for (( i = 1; i <= $nProc; i++ )); do
-		let npagaejecutar[$i]=0
-	done
-			
-	for (( i = 1; i <= $nProc; i++ )); do
-		let contadorPagGlob[$i]=0
-	done
-			
 	cola[0]="vacio"
-		
-	for (( i = 1; i<= $nProc; i++ )); do
-		for (( o = 0; o < ${maxPags[$i]}; o++ )); do
-			let paginasCola[$i,$o]=${paginas[$i,$o]}
-		done
-		o=0
-	
-		for (( ii = 0; ii < ${nMarcos[$i]}; ii++  )); do  		# <= O < NO LO SE
-			paginasUso[$i,$ii]="vacio"
-			paginasAux[$i,$ii]="vacio"
-		done
-		ii=0
+	esperaConLlegada=(); 					# Tiempo de espera acumulado.
+	esperaSinLlegada=();					# Tiempo de espera real.
+	tSistema=0;								# Tiempo del sistema.
+	salida=();								# Tiempo de retorno.
+	duracion=();							# Tiempo que ha estado el proceso desde entró hasta que terminó.
+	finalizados=0 							# Número de procesos que han terminado.
+	seAcaba=0 								# Para finalizar la ejecución (0 = aún no ha terminado, 1 = ya se terminó).
+	ejecutando=0;							# El proceso a ejecutar en cada ronda
+	enMemoria=();							# Ver si los procesos están en memoria.
+	tiempoRestante=();
+	tEjecutando=();							# Cuenta el tiempo ejecutando de cada proceso.
+	nPagEjecutadas=();
+	nPagAEjecutar=();
 
-		fallos[$i]=0
-	done
-	i=0
-	
-	esperaConLlegada=(); 					#Tiempo de espera acumulado
-	esperaSinLlegada=();					#Tiempo de espera real
-	primerproceso=${ordenados[1]}			#El proceso que menos tiempo tarda en llegar
-	tSistema=0;								#El tiempo que tarda el primer proceso en llegar
-	salida=();								#Tiempo de retorno
-	duracion=();							#Tiempo que ha estado el proceso desde entró hasta que terminó
-	finalizados=0 							#Procesos terminados
-	seAcaba=0 								#0 = aun no ha terminado, 1 = ya se terminó
-	ejecutando=0;							#El proceso a ejecutar en cada ronda
-	cuentafallos=();						#Cuenta los fallos de cada proceso
-	aejecutar=();
-	impordenado=();
-	
 	for (( counter = 1; counter <= $nProc; counter++ )); do
-		let aejecutar[$counter]=0
-		let impordenado[$counter]=0
+		enMemoria[$counter]="fuera"								# "fuera" si no está, "dentro" si está, "salido" si ha terminado.
+		let tiempoRestante[$counter]=${tEjec[$counter]}
+		let tEjecutando[$counter]=0
+		let nPagEjecutadas[$counter]=0
+		let nPagAEjecutar[$counter]=0
+		esperaConLlegada[$counter]=$tSistema					# Se acumula en su esperaConLlegada el tiempo de llegada del primer proceso en llegar.
 	done
-		
-	counter=0;								#Inicializamos contador a cero
-	exe=1;									#Ejecuciones que ha habido en una vuelta de lista
-	position=0;								#Posición del porceso que se debe ejecutar ahora
-	fin=0;
-	indicador=0;
-	i=0;
-	memUtiliz=0;							#memoria utilizada
-	opcionEjec=0;
 
-	#Se acumula en su esperaConLlegada el tiempo de llegada del primer proceso en llegar
-	for (( fef=1; fef<= $nProc; fef++ )); do
-		esperaConLlegada[$fef]=$tSistema
-	done
+	exe=1;									# Ejecuciones que ha habido en una vuelta de lista.
+	position=0;								# Posición del proceso que se debe ejecutar ahora.
+	counter=0;								# Inicializamos contador a cero.
+	i=0;
+	memUtiliz=0;							# Memoria utilizada.
+	opcionEjec=0;
 }
 
 # El primer proceso puede llegar en el instante 0 o en cualquier otro instante. La línea de tiempo inicial se comporta diferente dependiendo de esto.
 function llegaPrimerProceso(){
-	echo "hola"
+	
+	if [[ ${tLlegada[${ordenados[1]}]} -gt 0 ]]; then			# Si el tiempo de llegada del proceso con menor tiempo de llegada es mayor que 0...
+
+		ejecutando=${ordenados[1]}								# El proceso que se va a ejecutar será el que tenga menor tiempo de llegada.
+		aumento=${tLlegada[$ejecutando]}						# 'aumento' toma el valor del tiempo de llegada del primer proceso.
+		sumaTiempoEspera 1										# Se suma el tiempo de espera a los demás procesos.
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+			clear
+			imprimeCabeceraAlgoritmo
+			diagramaResumen
+			#imprimeNRU
+			diagramaMemoria
+			lineaDeTiempoCero 0
+
+			if [[ $opcionEjec = 2 ]]; then
+				sleep $segEsperaEventos
+			else
+				read -p " Pulse INTRO para continuar"
+			fi
+		fi
+		tSistema=${tLlegada[$ejecutando]}						# El instante de tiempo mostrado por pantalla será el tLlegada del proceso ejecutándose.
+		clear
+			
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
+			imprimeCabeceraAlgoritmo
+		fi
+			
+		meteEnMemoria
+		actualizaCola 1
+		ejecutando=${cola[0]}
+		#mueveCola
+
+		((nCambiosContexto++))
+		tCambiosContexto[$nCambiosContexto]=$tSistema
+		pEjecutados[$nCambiosContexto]=-1
+			
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
+
+			if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
+					if [[ $ejecutando -lt 10 ]]; then
+						echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
+						echo " Entra el proceso P0$ejecutando al procesador" >> $informe
+					else
+						echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
+						echo " Entra el proceso P$ejecutando al procesador" >> $informe
+					fi
+			fi
+			diagramaResumen
+			#imprimeNRU
+			diagramaMemoria
+			lineaDeTiempo
+			if [[ $opcionEjec = 2 ]]; then
+				sleep $segEsperaEventos
+			else
+				read -p " Pulse INTRO para continuar"
+			fi 
+		fi
+	else
+			if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
+				imprimeCabeceraAlgoritmo
+			fi
+			
+			meteEnMemoria
+			actualizaCola 1
+					
+			ejecutando=${cola[0]}
+			#mueveCola
+			
+			if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
+				if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
+					if [[ $ejecutando -lt 10 ]]; then
+						echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
+						echo " Entra el proceso P0$ejecutando al procesador" >> $informe
+					else
+						echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
+						echo " Entra el proceso P$ejecutando al procesador" >> $informe
+					fi
+				fi
+				diagramaResumen
+				#imprimeNRU
+				diagramaMemoria
+				lineaDeTiempoCero 1
+				if [[ $opcionEjec = 2 ]]; then
+					sleep $segEsperaEventos
+				else
+					read -p " Pulse INTRO para continuar"
+		
+				fi 
+			fi
+	fi
+	
 }
 
 # Imprime huecos en blanco en los informes que actúan como separador. El número de huecos depende del valor pasado como primer parámetro.
 # Si el segundo parámetro es 0, solo se envían a los informes, si no, se visualizan por pantalla.
 function imprimeHuecosInformes(){
 	
+	local huecos=""
 	if [[ $1 =~ ^[0-9]+$ ]]; then
     	for ((i=0; i<$1; i++)); do
     		huecos+="\n"
@@ -3997,6 +3495,7 @@ function imprimeHuecosInformes(){
 function final(){
 
 	clear
+	cabecera
 	printf "\n$_cyan$_b%s\n\n$_r"		" Por último, ¿desea abrir el informe? (s/n)"
 	read abrirInforme
 	
