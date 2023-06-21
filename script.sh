@@ -9,11 +9,6 @@
 
     logEventos=""
 
-	# NOTA BORRAR -> La función imprimeNRU se ha eliminado completamente porque no mostraba información correcta/relevante y tardaba mucho en imprimir.
-	# Si se está lo suficientemente loca como para intentarlo, traerla de versiones anteriores (total, sus llamadas siguen comentadas), pero
-	# no creo porque voy a suspender.
-
-
 	# Colores
 	declare -r _sel='\e[46m'		# Fondo cyan para la selección de opciones. BORRAR O MODIFICAR
 	declare -r CAB='\e[48;5;213m' 	# Color cabecera inicio MODIFICAR
@@ -193,6 +188,7 @@ function seleccionMenuInicio(){
 			seleccionEntrada
 			# function FCFS -> para tenerlo como guía al buscarlo. ir sustituyendo por ejecucion a medida que se hagan cambios.
 			#FCFS
+			#set -x
 			ejecucion
 			final
 			;;
@@ -286,8 +282,8 @@ function seleccionEntrada(){
 		read opcionIn
 	done
 	# Se muestra la opción elegida en el propio informe.
-	echo "  Seleccione una opción:  " >> $informe
-	echo -e "\e[1;38;5;81m  Seleccione una opción: : \e[0m" >> $informeColor
+	echo " Seleccione una opción:  " >> $informe
+	echo -e "\e[1;38;5;81m Seleccione una opción: : \e[0m" >> $informeColor
 	
 	# Muestra resaltada la opción seleccionada para que sea más visual.
 	case $opcionIn in
@@ -1268,7 +1264,7 @@ function seleccionTipoEjecucion(){
 			printf "\t$_green%s$_r%s\n"			"[3]" " -> Completa (sin esperas)" | tee -a $informeColor
 			printf "\t$_green%s$_r%s\n\n"		"[4]" " -> Completa solo resumen" | tee -a $informeColor
 
-			printf "\n$_b%s\n\n"				" ¿Qué opción desea realizar?" >> $informe
+			printf "\n%s\n\n"					" ¿Qué opción desea realizar?" >> $informe
 			printf "\t%s%s\n"					" -> [1]" " Por eventos (pulsando INTRO en cada cambio de estado) <-" >> $informe
 			printf "\t%s%s\n"					"[2]" " Automática (introduciendo cada cuántos segundos cambia de estado)" >> $informe
 			printf "\t%s%s\n"					"[3]" " Completa (sin esperas)" >> $informe
@@ -1284,7 +1280,7 @@ function seleccionTipoEjecucion(){
 			printf "\t$_green%s$_r%s\n"			"[3]" " -> Completa (sin esperas)" | tee -a $informeColor
 			printf "\t$_green%s$_r%s\n\n"		"[4]" " -> Completa solo resumen" | tee -a $informeColor
 
-			printf "\n$_b%s\n\n"				" ¿Qué opción desea realizar?" >> $informe
+			printf "\n%s\n\n"					" ¿Qué opción desea realizar?" >> $informe
 			printf "\t%s%s\n"					"[1]" " Por eventos (pulsando INTRO en cada cambio de estado)" >> $informe
 			printf "\t%s%s\n"					" -> [2]" " Automática (introduciendo cada cuántos segundos cambia de estado) <-" >> $informe
 			printf "\t%s%s\n"					"[3]" " Completa (sin esperas)" >> $informe
@@ -1306,7 +1302,7 @@ function seleccionTipoEjecucion(){
 			printf "\t$_sel%s%s$_r\n"			"[3]" " -> Completa (sin esperas)" | tee -a $informeColor
 			printf "\t$_green%s$_r%s\n\n"		"[4]" " -> Completa solo resumen" | tee -a $informeColor
 
-			printf "\n$_b%s\n\n"				" ¿Qué opción desea realizar?" >> $informe
+			printf "\n%s\n\n"					" ¿Qué opción desea realizar?" >> $informe
 			printf "\t%s%s\n"					"[1]" " Por eventos (pulsando INTRO en cada cambio de estado)" >> $informe
 			printf "\t%s%s\n"					"[2]" " Automática (introduciendo cada cuántos segundos cambia de estado)" >> $informe
 			printf "\t%s%s\n"					" -> [3]" " Completa (sin esperas) <-" >> $informe
@@ -1327,7 +1323,7 @@ function seleccionTipoEjecucion(){
 			printf "\t$_green%s$_r%s\n"			"[3]" " -> Completa (sin esperas)" | tee -a $informeColor
 			printf "\t$_sel%s%s$_r\n"			"[4]" " -> Completa solo resumen" | tee -a $informeColor
 
-			printf "\n$_b%s\n\n"				" ¿Qué opción desea realizar?" >> $informe
+			printf "\n%s\n\n"					" ¿Qué opción desea realizar?" >> $informe
 			printf "\t%s%s\n"					"[1]" " Por eventos (pulsando INTRO en cada cambio de estado)" >> $informe
 			printf "\t%s%s\n"					"[2]" " Automática (introduciendo cada cuántos segundos cambia de estado)" >> $informe
 			printf "\t%s%s\n"					"[3]" " Completa (sin esperas)" >> $informe
@@ -2984,7 +2980,10 @@ actualizaColaNuevo(){
 		fi
 	done
 
-	
+	# # Si el algoritmo es SJF, es necesario reordenar la cola por tiempos de ejecución.
+	# if [ "$alg" = "SJF" ] && [ ${#cola[@]} -gt 0 ]; then
+	# 	reordenaColaSJF
+	# fi
 }
 
 ############
@@ -2999,7 +2998,33 @@ mueveColaNuevo(){
 }
 
 
+function reordenaColaSJF(){
+	
+	local colaAux=()
+  	local maxTEjec=$(encontrarMax "${tEjec[@]}")  # Encuentra el máximo de los tiempos de ejecución.
 
+  	for ((lul = 0; lul <= maxTEjec; lul++)); do
+    	for proceso in "${cola[@]}"; do
+      		if ((tEjec[$proceso] == lul)); then
+        		colaAux+=($proceso)  # Añade elemento al vector auxiliar.
+      		fi
+    	done
+  	done
+  	cola=("${colaAux[@]}")  		# Copia el contenido de 'colaAux' en 'cola'.
+}
+
+function encontrarMax() {
+  	
+	local vector=("$@")  			# Se recibe el vector como parámetro.
+  	local maximo=0
+  	
+  	for num in "${vector[@]}"; do	# Itera sobre el vector para encontrar el máximo.
+    	if ((num > maximo)); then
+      		maximo=$num
+    	fi
+  	done
+	return $maximo
+}
 
 
 ########################################
@@ -3253,6 +3278,7 @@ function FCFS(){
 # Función que sustituirá a la ejecución normal si las pruebas salen correctamente..
 function ejecucion(){
 	
+	mostrarPantalla=1
 	imprimeHuecosInformes 3 0
 	inicializaVariablesEjecucion
 	seleccionTipoEjecucion		# El usuario elige el modo en que se ejecutará el algorimo (por eventos, automático, etc).
@@ -3277,12 +3303,14 @@ function ejecucion(){
 			tiemproceso=$tSistema
 		fi
  		
-        if [ $ejecutando != "vacio" ]; then     #NUEVO BORRAR
-            gestionFinalizacionProceso
+        if [ $ejecutando != "vacio" ]; then
+			mostrarPantalla=1
+			gestionFinalizacionProceso
 		    sumaTiempoEspera 0
 		    ejecutandoAntiguo=$ejecutando
-        else                                    # NUEVO BORRAR
-            ((tSistema++))
+        else
+			mostrarPantalla=0
+			((tSistema++))
             aumento=1
             sumaTiempoEspera 0
         fi
@@ -3294,7 +3322,10 @@ function ejecucion(){
             if [ ${#cola[@]} -gt 0 ]; then
                 ejecutando=${cola[0]}
                 mueveColaNuevo
-                if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
+                
+				mostrarPantalla=1
+				
+				if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
 				    if [[ $ejecutando -lt 10 ]]; then
 					    echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
 					    echo " Entra el proceso P0$ejecutando al procesador" >> $informe
@@ -3305,6 +3336,9 @@ function ejecucion(){
 			    fi
             else
                 ejecutando="vacio"
+				if [ $ejecutandoAntiguo == "vacio" ]; then
+					mostrarPantalla=0
+				fi
             fi
 		fi
 
@@ -3461,7 +3495,8 @@ function llegaPrimerProceso(){
 
 # Acciones que se llevan a cabo cuando un proceso finaliza su ejecución.
 function gestionFinalizacionProceso(){
-    exe=1
+    
+	exe=1
     let tSistema=tSistema+tiempoRestante[$ejecutando]
     let salida[$ejecutando]=$tSistema	#El momento de retorno será igual al momento de salida en el reloj
     let duracion[$ejecutando]=salida[$ejecutando]-tLlegada[$ejecutando]
@@ -3508,7 +3543,7 @@ function gestionFinalizacionProceso(){
 
 function volcadoAPantalla(){
 
-    #if [[ $mostrarPantalla -eq 1 ]];then
+    if [[ $mostrarPantalla -eq 1 ]];then
 			
 		case "${opcionEjec}" in
 		1)	#Ejecución por eventos (pulsa enter para ver el siguiente evento)
@@ -3546,7 +3581,7 @@ function volcadoAPantalla(){
 		esac
 
 		logEventos=""
-	#fi
+	fi
 
 }
 
