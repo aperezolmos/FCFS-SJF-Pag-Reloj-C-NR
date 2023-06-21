@@ -7,6 +7,8 @@
 # Luego puede utilizarse en más partes del programa.
 
 
+    logEventos=""
+
 	# NOTA BORRAR -> La función imprimeNRU se ha eliminado completamente porque no mostraba información correcta/relevante y tardaba mucho en imprimir.
 	# Si se está lo suficientemente loca como para intentarlo, traerla de versiones anteriores (total, sus llamadas siguen comentadas), pero
 	# no creo porque voy a suspender.
@@ -1153,7 +1155,7 @@ function leeRangosFichero(){
 	if [[ $1 == "ultimaEjecucion" ]]; then
 		
 		nombreFicheroRangos="DatosRangosLast"	
-		if [ ! -f "./datosScript/FLast/$nombreFicheroRangos" ]; then		# Si el archivo NO existe, se informa del error.
+		if [ ! -f "./datosScript/FLast/${nombreFicheroRangos}.txt" ]; then		# Si el archivo NO existe, se informa del error.
     	
 			printf "\n$_red$_b%s$_r%s"	" ERROR." " El archivo $nombreFicheroRangos.txt no existe. "
 			printf "\n%s" " >> Nota: El archivo de rangos de última ejecución se creará automáticamente cuando se ejecute algún algoritmo"
@@ -1929,7 +1931,6 @@ lineaDeTiempo() {
   i=0
   j=0
   k=0
-  mod=0
   espacios=()
   previoCambio=0
   color_bg=0
@@ -2921,6 +2922,86 @@ function imprimeCola(){
 
 
 
+meteEnMemoriaNuevo() {
+
+    colaMemoria=()		# Cola de entrada en memoria. Procesos que han llegado al sistema y se quiere ver si caben en memoria principal.
+
+    for ((posic = 1; posic <= $nProc; posic++)); do
+        
+		counter=${ordenados[$posic]}
+        if [[ ${tiempoRestante[$counter]} -ne 0 ]] && [[ $tSistema -ge ${tLlegada[$counter]} ]] && [[ ${enMemoria[$counter]} == "fuera" ]]; then
+
+            let memUtiliz=memUtiliz+${tamProceso[$counter]}
+
+            if [[ ${nMarcos[$counter]} -le $tamEspacioGrande ]]; then
+                        
+				enMemoria[$counter]="dentro"
+                colaMemoria+=("$counter")
+                        
+                for marcoNuevo in ${!espaciosMemoria[*]}; do
+                    if [[ ${espaciosMemoria[$marcoNuevo]} -ge ${nMarcos[$counter]} ]]; then
+                        procesosMemoria[$marcoNuevo]=$counter
+                        marcoIntroducido=$marcoNuevo
+                    fi
+                done
+                calcularEspaciosMemoria		# Cada vez que se meta un proceso a memoria, recalculamos sus espacios para ver si caben más.
+                if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+                    if [[ $counter -lt 10 ]]; then
+                        echo -e " Entra el proceso \e[1;3${colorines[$counter]}mP0$counter\e[0m a memoria a partir del marco $marcoIntroducido" | tee -a $informeColor
+                        echo "Entra el proceso P0$counter a memoria a partir del marco $marcoIntroducido" >> $informe
+                    else
+                        echo -e " Entra el proceso \e[1;3${colorines[$counter]}mP$counter\e[0m a memoria a partir del marco  $marcoIntroducido" | tee -a $informeColor
+                        echo " Entra el proceso P$counter a memoria a partir del marco $marcoIntroducido" >> $informe
+                    fi
+                fi
+            else
+                break	# Si no cabe el primer proceso no se evalúa el resto (cola FIFO de entrada a memoria).
+            fi
+        fi
+    done
+
+}
+
+############
+
+actualizaColaNuevo(){
+		
+    for ((n=0; n<${#colaMemoria[@]}; n++)); do
+		if [[ ${tLlegada[${colaMemoria[$n]}]} -ne $tSistema ]] && [ "${colaMemoria[$n]}" != "v" ]; then
+            cola+=("${colaMemoria[n]}")
+			colaMemoria[$n]="v"
+		fi
+	done
+	
+	if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]] && [[ $1 -ne 1 ]]; then
+        cola+=("$ejecutando")
+	fi
+	
+    for ((n=0; n<${#colaMemoria[@]}; n++)); do
+		if [[ ${tLlegada[${colaMemoria[$n]}]} -eq $tSistema ]] && [ "${colaMemoria[$n]}" != "v" ]; then
+            cola+=("${colaMemoria[n]}")
+			colaMemoria[$n]="v"
+		fi
+	done
+
+	
+}
+
+############
+
+mueveColaNuevo(){
+
+	for ((i=0; i<${#cola[@]}-1; i++)); do
+        j=$((i+1))
+        cola[$i]=${cola[$j]}
+    done
+    unset 'cola[${#cola[@]}-1]'
+}
+
+
+
+
+
 ########################################
 #        EJECUCION DEL ALGORIMO        #
 ########################################
@@ -3176,126 +3257,62 @@ function ejecucion(){
 	inicializaVariablesEjecucion
 	seleccionTipoEjecucion		# El usuario elige el modo en que se ejecutará el algorimo (por eventos, automático, etc).
 	imprimeHuecosInformes 2 0
-	clear
 
 	##### Esto ya es el algoritmo #####
 
 	ordenacion
-	llegaPrimerProceso
+	llegaPrimerProceso          # La línea de tiempo inicial se ve diferente dependiendo de si llega un proceso en T=0 o no.
 
 	# Pasamos al resto de procesos.
 	ejecutando=${cola[0]}
-	mueveCola
+	mueveColaNuevo
 	
 	while [ $seAcaba -eq 0 ]; do
 		
 		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
 			clear
 		fi
-		#ejecutando=${ordenados[$position]}
 			
 		if [ $finalizados -ne $nProc ]; then 	# Cambio de contexto.
 			tiemproceso=$tSistema
 		fi
  		
-		exe=1
-		let tSistema=tSistema+tiempoRestante[$ejecutando]
-		let salida[$ejecutando]=$tSistema	#El momento de retorno será igual al momento de salida en el reloj
-		let duracion[$ejecutando]=salida[$ejecutando]-tLlegada[$ejecutando]
-		aumento=${tiempoRestante[$ejecutando]}
-		nPagAEjecutar[$ejecutando]=${tiempoRestante[$ejecutando]}
-		let tEjecutando[$ejecutando]=tEjecutando[$ejecutando]+${tiempoRestante[$ejecutando]}
-		tiempoRestante[$ejecutando]=0
-		let finalizados=$finalizados+1
-		let memUtiliz=memUtiliz-${tamProceso[$ejecutando]}
-		enMemoria[$ejecutando]="salido"			#El valor "salido" quiere decir que el proceso ha estado en memoria y ha acabado, por lo que se ha sacado de allí
-		for marcoNuevo in ${!procesosMemoria[*]}; do
-			if [[ ${procesosMemoria[$marcoNuevo]} -eq $ejecutando ]]; then
-				unset procesosMemoria[$marcoNuevo]
-			fi
-		done
-		
-		calcularEspaciosMemoria
-		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
-			imprimeCabeceraAlgoritmo
-			if [[ $ejecutando -lt 10 ]]; then
-				echo -e " El proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m ha finalizado y ha transcurrido este tiempo: $aumento" | tee -a $informeColor
-				echo " El proceso P0$ejecutando ha finalizado y ha transcurrido este tiempo: $aumento" >> $informe
-			else
-				echo -e " El proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m ha finalizado y ha transcurrido este tiempo: $aumento" | tee -a $informeColor
-				echo " El proceso P$ejecutando ha finalizado y ha transcurrido este tiempo: $aumento" >> $informe
-			fi
-		fi
-			
-		((nCambiosContexto++))
-		tCambiosContexto[$nCambiosContexto]=$tSistema
-		pEjecutados[$nCambiosContexto]=$ejecutando
+        if [ $ejecutando != "vacio" ]; then     #NUEVO BORRAR
+            gestionFinalizacionProceso
+		    sumaTiempoEspera 0
+		    ejecutandoAntiguo=$ejecutando
+        else                                    # NUEVO BORRAR
+            ((tSistema++))
+            aumento=1
+            sumaTiempoEspera 0
+        fi
 
-		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
-			if [[ $ejecutando -lt 10 ]]; then
-				echo -e " \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" | tee -a $informeColor
-				echo " P0$ejecutando    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" >> $informe
-			else
-				echo -e " \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" | tee -a $informeColor
-				echo " P$ejecutando    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" >> $informe
-			fi
-		fi
-			
-		sumaTiempoEspera 0 #Función sumaTiempoEspera; aumenta el tiempo de espera acumulado de cada proceso
-		ejecutandoAntiguo=$ejecutando
-		#let position=position+1
-			
 		if [ $finalizados -ne $nProc ]; then
 
-			meteEnMemoria
-			actualizaCola 2
-			ejecutando=${cola[0]}
-			mueveCola
-			imprimeCola
-
-			until [ $ejecutando != "vacio" ]; do
-			meteEnMemoria
-			actualizaCola 2
-			ejecutando=${cola[0]}
-			mueveCola
-			imprimeCola
-			done
+			meteEnMemoriaNuevo
+			actualizaColaNuevo 2
+            if [ ${#cola[@]} -gt 0 ]; then
+                ejecutando=${cola[0]}
+                mueveColaNuevo
+                if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
+				    if [[ $ejecutando -lt 10 ]]; then
+					    echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
+					    echo " Entra el proceso P0$ejecutando al procesador" >> $informe
+				    else
+					    echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
+					    echo " Entra el proceso P$ejecutando al procesador" >> $informe
+				    fi
+			    fi
+            else
+                ejecutando="vacio"
+            fi
 		fi
 
-
-		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
-			if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
-				if [[ $ejecutando -lt 10 ]]; then
-					echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
-					echo " Entra el proceso P0$ejecutando al procesador" >> $informe
-				else
-					echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
-					echo " Entra el proceso P$ejecutando al procesador" >> $informe
-				fi
-			fi
-			diagramaResumen
-		fi
-
-			
-			
-		muestraTablaPaginas                ########################## I # M # P # O # R # T # A # N # T # E ###########################
-		sumaNPaginas
-
-		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
-			diagramaMemoria
-			lineaDeTiempo
-		fi
+        volcadoAPantalla
 
 		if [ $finalizados -eq $nProc ]; then	# Si todos los procesos terminados son igual a los procesos introducidos.
 			seAcaba=1
-		else	
-			if [[ $opcionEjec = 1 ]]; then
-				read -p " Pulse INTRO para continuar ↲ "
-			elif [[ $opcionEjec = 2 ]]; then
-				sleep $segEsperaEventos	
-			fi 
-		fi
-
+        fi
 	done
 
 	# Se da valor a esperaSinLlegada.
@@ -3320,8 +3337,8 @@ function ejecucion(){
 function inicializaVariablesEjecucion(){
 
 	# Se inicializan por defecto las variables.
-	cola[0]="vacio"
-	esperaConLlegada=(); 					# Tiempo de espera acumulado.
+	#cola[0]="vacio"
+    esperaConLlegada=(); 					# Tiempo de espera acumulado.
 	esperaSinLlegada=();					# Tiempo de espera real.
 	tSistema=0;								# Tiempo del sistema.
 	salida=();								# Tiempo de retorno.
@@ -3364,7 +3381,6 @@ function llegaPrimerProceso(){
 			clear
 			imprimeCabeceraAlgoritmo
 			diagramaResumen
-			#imprimeNRU
 			diagramaMemoria
 			lineaDeTiempoCero 0
 
@@ -3381,10 +3397,9 @@ function llegaPrimerProceso(){
 			imprimeCabeceraAlgoritmo
 		fi
 			
-		meteEnMemoria
-		actualizaCola 1
+		meteEnMemoriaNuevo
+		actualizaColaNuevo 1
 		ejecutando=${cola[0]}
-		#mueveCola
 
 		((nCambiosContexto++))
 		tCambiosContexto[$nCambiosContexto]=$tSistema
@@ -3393,16 +3408,15 @@ function llegaPrimerProceso(){
 		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
 
 			if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
-					if [[ $ejecutando -lt 10 ]]; then
-						echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
-						echo " Entra el proceso P0$ejecutando al procesador" >> $informe
-					else
-						echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
-						echo " Entra el proceso P$ejecutando al procesador" >> $informe
-					fi
+				if [[ $ejecutando -lt 10 ]]; then
+					echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
+					echo " Entra el proceso P0$ejecutando al procesador" >> $informe
+				else
+					echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
+					echo " Entra el proceso P$ejecutando al procesador" >> $informe
+				fi
 			fi
 			diagramaResumen
-			#imprimeNRU
 			diagramaMemoria
 			lineaDeTiempo
 			if [[ $opcionEjec = 2 ]]; then
@@ -3412,40 +3426,130 @@ function llegaPrimerProceso(){
 			fi 
 		fi
 	else
-			if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
-				imprimeCabeceraAlgoritmo
-			fi
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
+			imprimeCabeceraAlgoritmo
+		fi
 			
-			meteEnMemoria
-			actualizaCola 1
+		meteEnMemoriaNuevo
+		actualizaColaNuevo 1
 					
-			ejecutando=${cola[0]}
-			#mueveCola
+		ejecutando=${cola[0]}
 			
-			if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
-				if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
-					if [[ $ejecutando -lt 10 ]]; then
-						echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
-						echo " Entra el proceso P0$ejecutando al procesador" >> $informe
-					else
-						echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
-						echo " Entra el proceso P$ejecutando al procesador" >> $informe
-					fi
-				fi
-				diagramaResumen
-				#imprimeNRU
-				diagramaMemoria
-				lineaDeTiempoCero 1
-				if [[ $opcionEjec = 2 ]]; then
-					sleep $segEsperaEventos
+		if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then 
+			if [[ ${tiempoRestante[$ejecutando]} -ne 0 ]]; then
+				if [[ $ejecutando -lt 10 ]]; then
+					echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m al procesador" | tee -a $informeColor
+					echo " Entra el proceso P0$ejecutando al procesador" >> $informe
 				else
-					read -p " Pulse INTRO para continuar"
-		
-				fi 
+					echo -e " Entra el proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m al procesador" | tee -a $informeColor
+					echo " Entra el proceso P$ejecutando al procesador" >> $informe
+				fi
 			fi
+			diagramaResumen
+			diagramaMemoria
+			lineaDeTiempoCero 1
+			if [[ $opcionEjec = 2 ]]; then
+				sleep $segEsperaEventos
+			else
+				read -p " Pulse INTRO para continuar"
+		
+			fi 
+		fi
 	fi
 	
 }
+
+# Acciones que se llevan a cabo cuando un proceso finaliza su ejecución.
+function gestionFinalizacionProceso(){
+    exe=1
+    let tSistema=tSistema+tiempoRestante[$ejecutando]
+    let salida[$ejecutando]=$tSistema	#El momento de retorno será igual al momento de salida en el reloj
+    let duracion[$ejecutando]=salida[$ejecutando]-tLlegada[$ejecutando]
+    aumento=${tiempoRestante[$ejecutando]}
+    nPagAEjecutar[$ejecutando]=${tiempoRestante[$ejecutando]}
+    let tEjecutando[$ejecutando]=tEjecutando[$ejecutando]+${tiempoRestante[$ejecutando]}
+    tiempoRestante[$ejecutando]=0
+    let finalizados=$finalizados+1
+    let memUtiliz=memUtiliz-${tamProceso[$ejecutando]}
+    enMemoria[$ejecutando]="salido"			#El valor "salido" quiere decir que el proceso ha estado en memoria y ha acabado, por lo que se ha sacado de allí
+    for marcoNuevo in ${!procesosMemoria[*]}; do
+        if [[ ${procesosMemoria[$marcoNuevo]} -eq $ejecutando ]]; then
+            unset procesosMemoria[$marcoNuevo]
+        fi
+    done
+    
+    calcularEspaciosMemoria
+    if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+        imprimeCabeceraAlgoritmo
+        if [[ $ejecutando -lt 10 ]]; then
+            echo -e " El proceso \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m ha finalizado y ha transcurrido este tiempo: $aumento" | tee -a $informeColor
+            echo " El proceso P0$ejecutando ha finalizado y ha transcurrido este tiempo: $aumento" >> $informe
+        else
+            echo -e " El proceso \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m ha finalizado y ha transcurrido este tiempo: $aumento" | tee -a $informeColor
+            echo " El proceso P$ejecutando ha finalizado y ha transcurrido este tiempo: $aumento" >> $informe
+        fi
+    fi
+        
+    ((nCambiosContexto++))
+    tCambiosContexto[$nCambiosContexto]=$tSistema
+    pEjecutados[$nCambiosContexto]=$ejecutando
+
+    if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
+        if [[ $ejecutando -lt 10 ]]; then
+            echo -e " \e[1;3${colorines[$ejecutando]}mP0$ejecutando\e[0m    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" | tee -a $informeColor
+            echo " P0$ejecutando    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" >> $informe
+        else
+            echo -e " \e[1;3${colorines[$ejecutando]}mP$ejecutando\e[0m    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" | tee -a $informeColor
+            echo " P$ejecutando    Tiempo de entrada: $tiemproceso Tiempo Salida: $tSistema Tiempo Restante: ${tiempoRestante[$ejecutando]}" >> $informe
+        fi
+    fi
+}
+
+
+function volcadoAPantalla(){
+
+    #if [[ $mostrarPantalla -eq 1 ]];then
+			
+		case "${opcionEjec}" in
+		1)	#Ejecución por eventos (pulsa enter para ver el siguiente evento)
+			#clear
+            #imprimeCabeceraAlgoritmo
+
+            diagramaResumen
+            muestraTablaPaginas
+		    sumaNPaginas
+			diagramaMemoria
+            lineaDeTiempo
+			read -p " Pulse INTRO para continuar ↲ "
+			echo
+		;;
+		2)	#Ejecución automática (espera un determinado numero de segundos entre cada evento)
+			#clear
+            #imprimeCabeceraAlgoritmo
+
+            diagramaResumen
+            muestraTablaPaginas
+		    sumaNPaginas
+			diagramaMemoria
+            lineaDeTiempo
+			sleep $segEsperaEventos	
+		;;
+		# 3) #Ejecución completa (no espera nada entre pantallas)
+		# 	diagramaresumen >> "./$CARPETA_INFORMES/$INFORMECOLOR_NOMBRE"
+		# 	diagramaresumen >> "./$CARPETA_INFORMES/$INFORMEBN_NOMBRE"
+		# 	clear
+		# 	echo -n 'Ejecutando...' >&3
+		# 	local cargando
+		# 	((cargando=100*numProcesosFinalizados/numProcesos))
+		# 	printf "(%d%%)" "$cargando" >&3
+		# ;;
+		esac
+
+		logEventos=""
+	#fi
+
+}
+
 
 # Imprime huecos en blanco en los informes que actúan como separador. El número de huecos depende del valor pasado como primer parámetro.
 # Si el segundo parámetro es 0, solo se envían a los informes, si no, se visualizan por pantalla.
