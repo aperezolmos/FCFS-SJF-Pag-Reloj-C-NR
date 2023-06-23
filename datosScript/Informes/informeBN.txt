@@ -1,0 +1,318 @@
+
+ ############################################################################
+ #                                                                          #
+ #                                                                          #
+ #                           PRÁCTICA DE CONTROL                            #
+ #     FCFS/SJF - Paginación - Reloj - Memoria Continua - No Reubicable     #
+ #                                                                          #
+ #                        Autora:  Amanda Pérez Olmos                       #
+ #                         Anterior: César Rodríguez                        #
+ #                                                                          #
+ #                      Sistemas Operativos 2º Semestre                     #
+ #                Grado en Ingeniería Informática (2022-2023)               #
+ #                                                                          #
+ #                       Tutor: Jose Manuel Saiz Diez                       #
+ #                                                                          #
+ #                                                                          #
+ ############################################################################
+
+
+
+ ############################################################################
+ # INFORME DE LA PRÁCTICA                               23/jun/2023 - 11:16 #
+ ############################################################################
+
+ Seleccione una opción:  
+
+	  -> Fichero de datos de última ejecución (DatosLast.txt) <-	
+
+
+ Elija un fichero: DatosLast.txt
+
+ >> Has introducido los datos por el fichero de la última ejecución.
+
+ TABLA FINAL DE DATOS:
+ Memoria del Sistema:  2000
+ Tamaño  de   Página:  100
+ Número  de   marcos:  20
+ Ref Tll Tej nMar Dirección-Página
+ P01|  4| 10|  15|100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02|  6|  3|  18|123-1 456-4 789-7 
+ P03|  6| 11|  19|123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04| 25| 14|   1|123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05| 25|  5|  12|798-7 9999-99 66-0 333-3 546-5 
+ P06| 26|  8|   6|132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+
+
+
+
+
+
+ ¿Qué opción desea realizar?
+
+	 -> [1] Por eventos (pulsando INTRO en cada cambio de estado) <-
+	[2] Automática (introduciendo cada cuántos segundos cambia de estado)
+	[3] Completa (sin esperas)
+	[4] Completa solo resumen
+
+
+
+ FCFS/SJF - PAGINACIÓN - RELOJ - MEMORIA CONTINUA - NO REUBICABLE
+ T=0	Memoria del sistema = 2000      Tamaño de página = 100      Número de marcos:  20
+
+
+ P01	T.lleg: 4	T.Ejec: 10	Marcos: 15	T.Espera: 4  T.Restante: 10  Estado: Fuera de sist.  100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02	T.lleg: 6	T.Ejec: 3	Marcos: 18	T.Espera: 4  T.Restante: 3  Estado: Fuera de sist.  123-1 456-4 789-7 
+ P03	T.lleg: 6	T.Ejec: 11	Marcos: 19	T.Espera: 4  T.Restante: 11  Estado: Fuera de sist.  123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04	T.lleg: 25	T.Ejec: 14	Marcos: 1	T.Espera: 4  T.Restante: 14  Estado: Fuera de sist.  123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05	T.lleg: 25	T.Ejec: 5	Marcos: 12	T.Espera: 4  T.Restante: 5  Estado: Fuera de sist.  798-7 9999-99 66-0 333-3 546-5 
+ P06	T.lleg: 26	T.Ejec: 8	Marcos: 6	T.Espera: 4  T.Restante: 8  Estado: Fuera de sist.  132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+
+    |                                                            |
+ BM |  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -| M=20
+    |  0                                                         |
+ FCFS/SJF - PAGINACIÓN - RELOJ - MEMORIA CONTINUA - NO REUBICABLE
+ T=4	Memoria del sistema = 2000      Tamaño de página = 100      Número de marcos:  20
+
+ Entra el proceso P01 a memoria a partir del marco 0
+ Entra el proceso P01 al procesador
+
+ P01	T.lleg: 4	T.Ejec: 10	Marcos: 15	T.Espera: 4  T.Restante: 10 Estado: En ejecución 100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02	T.lleg: 6	T.Ejec: 3	Marcos: 18	T.Espera: 4  T.Restante: 3  Estado: Fuera de sist.  123-1 456-4 789-7 
+ P03	T.lleg: 6	T.Ejec: 11	Marcos: 19	T.Espera: 4  T.Restante: 11  Estado: Fuera de sist.  123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04	T.lleg: 25	T.Ejec: 14	Marcos: 1	T.Espera: 4  T.Restante: 14  Estado: Fuera de sist.  123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05	T.lleg: 25	T.Ejec: 5	Marcos: 12	T.Espera: 4  T.Restante: 5  Estado: Fuera de sist.  798-7 9999-99 66-0 333-3 546-5 
+ P06	T.lleg: 26	T.Ejec: 8	Marcos: 6	T.Espera: 4  T.Restante: 8  Estado: Fuera de sist.  132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+
+    |P01                                                         |
+ BM |  1  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -| M=20
+    |  0                                           15            |
+ FCFS/SJF - PAGINACIÓN - RELOJ - MEMORIA CONTINUA - NO REUBICABLE
+ T=14	Memoria del sistema = 2000      Tamaño de página = 100      Número de marcos:  20
+
+ El proceso P01 ha finalizado y ha transcurrido este tiempo: 10
+ P01    Tiempo de entrada: 4   Tiempo Salida: 14   Tiempo Restante: 0
+ Entra el proceso P02 a memoria a partir del marco 0
+ Entra el proceso P02 al procesador
+
+ P01	T.lleg: 4	T.Ejec: 10	Marcos: 15	T.Espera: 4  T.Restante: 0 Estado: Finalizado  100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02	T.lleg: 6	T.Ejec: 3	Marcos: 18	T.Espera: 14  T.Restante: 3 Estado: En ejecución 123-1 456-4 789-7 
+ P03	T.lleg: 6	T.Ejec: 11	Marcos: 19	T.Espera: 14  T.Restante: 11 Estado: En espera 123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04	T.lleg: 25	T.Ejec: 14	Marcos: 1	T.Espera: 14  T.Restante: 14  Estado: Fuera de sist.  123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05	T.lleg: 25	T.Ejec: 5	Marcos: 12	T.Espera: 14  T.Restante: 5  Estado: Fuera de sist.  798-7 9999-99 66-0 333-3 546-5 
+ P06	T.lleg: 26	T.Ejec: 8	Marcos: 6	T.Espera: 14  T.Restante: 8  Estado: Fuera de sist.  132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+             1         2         3         0         8        45         1         4         6         3
+  M0 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1
+  M1        M1 M1 -  2-1 M1 -  2-1 M1 -  2-1 M1 -  2-1 M1 -  2-1 M1 -  2-1 M1 -  2-1 M1 -  2-1 M1 -  2-1
+  M2        M2        M2 M2 -  3-1 M2 -  3-1 M2 -  3-1 M2 -  3-1 M2 -  3-1 M2 -  3-1 M2 -  3-1 M2 -  3-1
+  M3        M3        M3        M3 M3 -  0-1 M3 -  0-1 M3 -  0-1 M3 -  0-1 M3 -  0-1 M3 -  0-1 M3 -  0-1
+  M4        M4        M4        M4        M4 M4 -  8-1 M4 -  8-1 M4 -  8-1 M4 -  8-1 M4 -  8-1 M4 -  8-1
+  M5        M5        M5        M5        M5        M5 M5 - 45-1 M5 - 45-1 M5 - 45-1 M5 - 45-1 M5 - 45-1
+  M6        M6        M6        M6        M6        M6        M6        M6 M6 -  4-1 M6 -  4-1 M6 -  4-1
+  M7        M7        M7        M7        M7        M7        M7        M7        M7 M7 -  6-1 M7 -  6-1
+  M8        M8        M8        M8        M8        M8        M8        M8        M8        M8        M8
+  M9        M9        M9        M9        M9        M9        M9        M9        M9        M9        M9
+ M10       M10       M10       M10       M10       M10       M10       M10       M10       M10       M10
+ M11       M11       M11       M11       M11       M11       M11       M11       M11       M11       M11
+ M12       M12       M12       M12       M12       M12       M12       M12       M12       M12       M12
+ M13       M13       M13       M13       M13       M13       M13       M13       M13       M13       M13
+ M14       M14       M14       M14       M14       M14       M14       M14       M14       M14       M14
+
+    |P02                                                         |
+ BM |  1  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -| M=20
+    |  0                                                    18   |
+ FCFS/SJF - PAGINACIÓN - RELOJ - MEMORIA CONTINUA - NO REUBICABLE
+ T=17	Memoria del sistema = 2000      Tamaño de página = 100      Número de marcos:  20
+
+ El proceso P02 ha finalizado y ha transcurrido este tiempo: 3
+ P02    Tiempo de entrada: 14   Tiempo Salida: 17   Tiempo Restante: 0
+ Entra el proceso P03 a memoria a partir del marco 0
+ Entra el proceso P03 al procesador
+
+ P01	T.lleg: 4	T.Ejec: 10	Marcos: 15	T.Espera: 4  T.Restante: 0 Estado: Finalizado  100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02	T.lleg: 6	T.Ejec: 3	Marcos: 18	T.Espera: 14  T.Restante: 0 Estado: Finalizado  123-1 456-4 789-7 
+ P03	T.lleg: 6	T.Ejec: 11	Marcos: 19	T.Espera: 17  T.Restante: 11 Estado: En ejecución 123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04	T.lleg: 25	T.Ejec: 14	Marcos: 1	T.Espera: 17  T.Restante: 14  Estado: Fuera de sist.  123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05	T.lleg: 25	T.Ejec: 5	Marcos: 12	T.Espera: 17  T.Restante: 5  Estado: Fuera de sist.  798-7 9999-99 66-0 333-3 546-5 
+ P06	T.lleg: 26	T.Ejec: 8	Marcos: 6	T.Espera: 17  T.Restante: 8  Estado: Fuera de sist.  132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+             1         4         7
+  M0 M0 -  1-1 M0 -  1-1 M0 -  1-1
+  M1        M1 M1 -  4-1 M1 -  4-1
+  M2        M2        M2 M2 -  7-1
+  M3        M3        M3        M3
+  M4        M4        M4        M4
+  M5        M5        M5        M5
+  M6        M6        M6        M6
+  M7        M7        M7        M7
+  M8        M8        M8        M8
+  M9        M9        M9        M9
+ M10       M10       M10       M10
+ M11       M11       M11       M11
+ M12       M12       M12       M12
+ M13       M13       M13       M13
+ M14       M14       M14       M14
+ M15       M15       M15       M15
+ M16       M16       M16       M16
+ M17       M17       M17       M17
+
+    |P03                                                         |
+ BM |  1  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -| M=20
+    |  0                                                       19|
+ FCFS/SJF - PAGINACIÓN - RELOJ - MEMORIA CONTINUA - NO REUBICABLE
+ T=28	Memoria del sistema = 2000      Tamaño de página = 100      Número de marcos:  20
+
+ El proceso P03 ha finalizado y ha transcurrido este tiempo: 11
+ P03    Tiempo de entrada: 17   Tiempo Salida: 28   Tiempo Restante: 0
+ Entra el proceso P04 a memoria a partir del marco 0
+ Entra el proceso P05 a memoria a partir del marco 1
+ Entra el proceso P06 a memoria a partir del marco 13
+ Entra el proceso P04 al procesador
+
+ P01	T.lleg: 4	T.Ejec: 10	Marcos: 15	T.Espera: 4  T.Restante: 0 Estado: Finalizado  100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02	T.lleg: 6	T.Ejec: 3	Marcos: 18	T.Espera: 14  T.Restante: 0 Estado: Finalizado  123-1 456-4 789-7 
+ P03	T.lleg: 6	T.Ejec: 11	Marcos: 19	T.Espera: 17  T.Restante: 0 Estado: Finalizado  123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04	T.lleg: 25	T.Ejec: 14	Marcos: 1	T.Espera: 28  T.Restante: 14 Estado: En ejecución 123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05	T.lleg: 25	T.Ejec: 5	Marcos: 12	T.Espera: 28  T.Restante: 5 Estado: En memoria 798-7 9999-99 66-0 333-3 546-5 
+ P06	T.lleg: 26	T.Ejec: 8	Marcos: 6	T.Espera: 28  T.Restante: 8 Estado: En memoria 132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+             1         0        77        99         0         4        46        13         7         4         6
+  M0 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1
+  M1        M1 M1 -  0-1 M1 -  0-1 M1 -  0-1 M1 -  0-1 M1 -  0-1 M1 -  0-1 M1 -  0-1 M1 -  0-1 M1 -  0-1 M1 -  0-1
+  M2        M2        M2 M2 - 77-1 M2 - 77-1 M2 - 77-1 M2 - 77-1 M2 - 77-1 M2 - 77-1 M2 - 77-1 M2 - 77-1 M2 - 77-1
+  M3        M3        M3        M3 M3 - 99-1 M3 - 99-1 M3 - 99-1 M3 - 99-1 M3 - 99-1 M3 - 99-1 M3 - 99-1 M3 - 99-1
+  M4        M4        M4        M4        M4        M4 M4 -  4-1 M4 -  4-1 M4 -  4-1 M4 -  4-1 M4 -  4-1 M4 -  4-1
+  M5        M5        M5        M5        M5        M5        M5 M5 - 46-1 M5 - 46-1 M5 - 46-1 M5 - 46-1 M5 - 46-1
+  M6        M6        M6        M6        M6        M6        M6        M6 M6 - 13-1 M6 - 13-1 M6 - 13-1 M6 - 13-1
+  M7        M7        M7        M7        M7        M7        M7        M7        M7 M7 -  7-1 M7 -  7-1 M7 -  7-1
+  M8        M8        M8        M8        M8        M8        M8        M8        M8        M8        M8 M8 -  6-1
+  M9        M9        M9        M9        M9        M9        M9        M9        M9        M9        M9        M9
+ M10       M10       M10       M10       M10       M10       M10       M10       M10       M10       M10       M10
+ M11       M11       M11       M11       M11       M11       M11       M11       M11       M11       M11       M11
+ M12       M12       M12       M12       M12       M12       M12       M12       M12       M12       M12       M12
+ M13       M13       M13       M13       M13       M13       M13       M13       M13       M13       M13       M13
+ M14       M14       M14       M14       M14       M14       M14       M14       M14       M14       M14       M14
+ M15       M15       M15       M15       M15       M15       M15       M15       M15       M15       M15       M15
+ M16       M16       M16       M16       M16       M16       M16       M16       M16       M16       M16       M16
+ M17       M17       M17       M17       M17       M17       M17       M17       M17       M17       M17       M17
+ M18       M18       M18       M18       M18       M18       M18       M18       M18       M18       M18       M18
+
+    |P04P05                                 P06                  |
+ BM |  1  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -| M=20
+    |  0  1                                  13                19|
+ FCFS/SJF - PAGINACIÓN - RELOJ - MEMORIA CONTINUA - NO REUBICABLE
+ T=42	Memoria del sistema = 2000      Tamaño de página = 100      Número de marcos:  20
+
+ El proceso P04 ha finalizado y ha transcurrido este tiempo: 14
+ P04    Tiempo de entrada: 28   Tiempo Salida: 42   Tiempo Restante: 0
+ Entra el proceso P05 al procesador
+
+ P01	T.lleg: 4	T.Ejec: 10	Marcos: 15	T.Espera: 4  T.Restante: 0 Estado: Finalizado  100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02	T.lleg: 6	T.Ejec: 3	Marcos: 18	T.Espera: 14  T.Restante: 0 Estado: Finalizado  123-1 456-4 789-7 
+ P03	T.lleg: 6	T.Ejec: 11	Marcos: 19	T.Espera: 17  T.Restante: 0 Estado: Finalizado  123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04	T.lleg: 25	T.Ejec: 14	Marcos: 1	T.Espera: 28  T.Restante: 0 Estado: Finalizado  123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05	T.lleg: 25	T.Ejec: 5	Marcos: 12	T.Espera: 42  T.Restante: 5 Estado: En ejecución 798-7 9999-99 66-0 333-3 546-5 
+ P06	T.lleg: 26	T.Ejec: 8	Marcos: 6	T.Espera: 42  T.Restante: 8 Estado: En memoria 132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+             1         8         4         1        78        67         4        12         7        56         0         6        45         7
+  M0 M0 -  1-1 M0 -  8-1 M0 -  4-1 M0 -  1-1 M0 - 78-1 M0 - 67-1 M0 -  4-1 M0 - 12-1 M0 -  7-1 M0 - 56-1 M0 -  0-1 M0 -  6-1 M0 - 45-1 M0 -  7-1
+
+    |   P05                                 P06                  |
+ BM |  -  7  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -| M=20
+    |  0  1                                  13                19|
+ FCFS/SJF - PAGINACIÓN - RELOJ - MEMORIA CONTINUA - NO REUBICABLE
+ T=47	Memoria del sistema = 2000      Tamaño de página = 100      Número de marcos:  20
+
+ El proceso P05 ha finalizado y ha transcurrido este tiempo: 5
+ P05    Tiempo de entrada: 42   Tiempo Salida: 47   Tiempo Restante: 0
+ Entra el proceso P06 al procesador
+
+ P01	T.lleg: 4	T.Ejec: 10	Marcos: 15	T.Espera: 4  T.Restante: 0 Estado: Finalizado  100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02	T.lleg: 6	T.Ejec: 3	Marcos: 18	T.Espera: 14  T.Restante: 0 Estado: Finalizado  123-1 456-4 789-7 
+ P03	T.lleg: 6	T.Ejec: 11	Marcos: 19	T.Espera: 17  T.Restante: 0 Estado: Finalizado  123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04	T.lleg: 25	T.Ejec: 14	Marcos: 1	T.Espera: 28  T.Restante: 0 Estado: Finalizado  123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05	T.lleg: 25	T.Ejec: 5	Marcos: 12	T.Espera: 42  T.Restante: 0 Estado: Finalizado  798-7 9999-99 66-0 333-3 546-5 
+ P06	T.lleg: 26	T.Ejec: 8	Marcos: 6	T.Espera: 47  T.Restante: 8 Estado: En ejecución 132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+             7        99         0         3         5
+  M0 M0 -  7-1 M0 -  7-1 M0 -  7-1 M0 -  7-1 M0 -  7-1
+  M1        M1 M1 - 99-1 M1 - 99-1 M1 - 99-1 M1 - 99-1
+  M2        M2        M2 M2 -  0-1 M2 -  0-1 M2 -  0-1
+  M3        M3        M3        M3 M3 -  3-1 M3 -  3-1
+  M4        M4        M4        M4        M4 M4 -  5-1
+  M5        M5        M5        M5        M5        M5
+  M6        M6        M6        M6        M6        M6
+  M7        M7        M7        M7        M7        M7
+  M8        M8        M8        M8        M8        M8
+  M9        M9        M9        M9        M9        M9
+ M10       M10       M10       M10       M10       M10
+ M11       M11       M11       M11       M11       M11
+
+    |                                       P06                  |
+ BM |  -  -  -  -  -  -  -  -  -  -  -  -  -  1  -  -  -  -  -  -| M=20
+    |  0                                     13                19|
+ FCFS/SJF - PAGINACIÓN - RELOJ - MEMORIA CONTINUA - NO REUBICABLE
+ T=55	Memoria del sistema = 2000      Tamaño de página = 100      Número de marcos:  20
+
+ El proceso P06 ha finalizado y ha transcurrido este tiempo: 8
+ P06    Tiempo de entrada: 47   Tiempo Salida: 55   Tiempo Restante: 0
+
+ P01	T.lleg: 4	T.Ejec: 10	Marcos: 15	T.Espera: 4  T.Restante: 0 Estado: Finalizado  100-1 200-2 326-3 1-0 896-8 4563-45 123-1 459-4 684-6 324-3 
+ P02	T.lleg: 6	T.Ejec: 3	Marcos: 18	T.Espera: 14  T.Restante: 0 Estado: Finalizado  123-1 456-4 789-7 
+ P03	T.lleg: 6	T.Ejec: 11	Marcos: 19	T.Espera: 17  T.Restante: 0 Estado: Finalizado  123-1 46-0 7777-77 9999-99 99-0 498-4 4654-46 1321-13 789-7 433-4 646-6 
+ P04	T.lleg: 25	T.Ejec: 14	Marcos: 1	T.Espera: 28  T.Restante: 0 Estado: Finalizado  123-1 896-8 463-4 145-1 7897-78 6786-67 456-4 1237-12 785-7 5645-56 78-0 645-6 4564-45 786-7 
+ P05	T.lleg: 25	T.Ejec: 5	Marcos: 12	T.Espera: 42  T.Restante: 0 Estado: Finalizado  798-7 9999-99 66-0 333-3 546-5 
+ P06	T.lleg: 26	T.Ejec: 8	Marcos: 6	T.Espera: 47  T.Restante: 0 Estado: Finalizado  132-1 546-5 8965-89 163-1 798-7 1231-12 5321-53 13-0 
+             1         5        89         1         7        12        53         0
+  M0 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  1-1 M0 -  0-1
+  M1        M1 M1 -  5-1 M1 -  5-1 M1 -  5-1 M1 -  5-1 M1 -  5-1 M1 -  5-1 M1 -  5-0
+  M2        M2        M2 M2 - 89-1 M2 - 89-1 M2 - 89-1 M2 - 89-1 M2 - 89-1 M2 - 89-0
+  M3        M3        M3        M3        M3 M3 -  7-1 M3 -  7-1 M3 -  7-1 M3 -  7-0
+  M4        M4        M4        M4        M4        M4 M4 - 12-1 M4 - 12-1 M4 - 12-0
+  M5        M5        M5        M5        M5        M5        M5 M5 - 53-1 M5 - 53-0
+
+    |                                                            |
+ BM |  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -| M=20
+    |  0                                                         |
+T.Espera: Tiempo que el proceso no ha estado ejecutándose en la CPU desde que entra en memoria hasta que sale
+Inicio/Fin:  Tiempo de llegada al gestor de memoria del proceso y tiempo de salida del proceso
+T.Retorno:   Tiempo total de ejecución del proceso, incluyendo tiempos de espera, desde la señal de entrada hasta la salida
+Fallos Pág.:   Número de fallos de página que han ocurrido en la ejecución de cada proceso
+
+
+Resumen final con tiempos de ejecución y fallos de página de cada proceso
+|
+|  Proceso: P01	T.Espera: 0	Inicio/fin: 4/14	T.Retorno: 10	Fallos Pág.: 8
+|
+|  Proceso: P02	T.Espera: 8	Inicio/fin: 6/17	T.Retorno: 11	Fallos Pág.: 3
+|
+|  Proceso: P03	T.Espera: 11	Inicio/fin: 6/28	T.Retorno: 22	Fallos Pág.: 9
+|
+|  Proceso: P04	T.Espera: 3	Inicio/fin: 25/42	T.Retorno: 17	Fallos Pág.: 14
+|
+|  Proceso: P05	T.Espera: 17	Inicio/fin: 25/47	T.Retorno: 22	Fallos Pág.: 5
+|
+|  Proceso: P06	T.Espera: 21	Inicio/fin: 26/55	T.Retorno: 29	Fallos Pág.: 7
+   Tiempo total transcurrido en ejecutar todos los procesos: 55
+   Media tiempo espera  de todos los procesos: 6.500
+   Media tiempo retorno de todos los procesos: 18.500
+
+ ############################################################
+ #                                                          #
+ #                   INFORME DE PRÁCTICA                    #
+ #               GESTIÓN DE MEMORIA VIRTUAL                 #
+ #       -------------------------------------------        #
+ #       --------------       FIN      -------------        #
+ #       -------------------------------------------        #
+ #       -------------------------------------------        #
+ #                                                          #
+ ############################################################
+
+
+ ############################################################
+ #                                                          #
+ #                   INFORME DE PRÁCTICA                    #
+ #               GESTIÓN DE MEMORIA VIRTUAL                 #
+ #       -------------------------------------------        #
+ #       --------------       FIN      -------------        #
+ #       -------------------------------------------        #
+ #       -------------------------------------------        #
+ #                                                          #
+ ############################################################
+
