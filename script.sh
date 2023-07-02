@@ -38,7 +38,8 @@
 	marcosMem=0;			# Número de marcos que caben en la memoria
 	tamPag=0;				# Tamaño de las páginas.
 	nProc=0; 				# Número total de procesos.
-	alg="FCFS"				# Algoritmo a utilizar (puede ser "FCFS" o "SJF").
+	alg="FCFS"				# Algoritmo de planificación de procesos (puede ser "FCFS" o "SJF").
+	algReemplazo="RELOJ"	# Algoritmo de reemplazo de páginas (puede ser "RELOJ" o "SEGOP").
 	anchoUnidadBarras=3
     logEventos=""
 	logEventosBN=""
@@ -71,7 +72,6 @@
 	# Algoritmo ejecucion
 	tSistema=0;				# Tiempo actual del sistema.
 	seAcaba=0;				# Para saber si la ejecución ha acabado (solo se usa en la opción 4, que muestra solo el resumen final).
-	laMedia=0;				# Media calculada por la función 'media()'.
 
 	# Vectores
 	Ref=()							# Almacena las referencias a los procesos (por ejemplo, Ref[1]=P01, Ref[20]=P20).
@@ -108,10 +108,11 @@
 	tamEspacioGrande=0			# Tamaño del espacio vacío más grande en memoria.
 	espaciosMemoria=()			# Array que contiene la cantidad de espacios vacíos consecutivos en memoria.
 
-	# Algoritmo Reloj
+	# Algoritmo reemplazo de páginas (Reloj/SegOp)
 	declare -A procesoTiempoMarcoPagina			# Valores de los marcos de memoria.
 	declare -A procesoTiempoMarcoPuntero		# Orden del puntero.
-	declare -A procesoTiempoMarcoBitsReloj		# Valores de bits de reloj.
+	declare -A procesoTiempoMarcoBits			# Valores de bits de reloj/segunda oportunidad
+	declare -A procesoTiempoMarcoFallo			# Fallos de página en el proceso a lo largo del tiempo.
 
 	# diagramaResumen
 	nPagAEjecutar=();		# Se usa para ver cuántas páginas hay que subrayar porque se han ejecutado.
@@ -218,14 +219,14 @@ function seleccionMenuInicio(){
 
 ###################################################################################################################################
 
-# Permite elegir al usuario si quiere ejecutar el algoritmo por FCFS o SJF.
+# Permite al usuario elegir el algoritmo de planificación de procesos (FCFS o SJF) y de reemplazo de páginas (Reloj o Segunda Oportunidad).
 function seleccionAlgoritmo(){
 	
 	clear
 	cabecera
 	printf "\n$_cyan$_b%s\n\n$_r"		" Escoja un algoritmo de planificación de procesos:"
 	printf "\t$_verd%s$_r%s\n"			"[1]" " -> FCFS"
-	printf "\t$_verd%s$_r%s\n\n"			"[2]" " -> SJF"
+	printf "\t$_verd%s$_r%s\n\n"		"[2]" " -> SJF"
 	read -p " Seleccione la opción: " algSeleccionado
 	
 	until [[ $algSeleccionado =~ ^[1-2]$ ]]; do
@@ -250,6 +251,39 @@ function seleccionAlgoritmo(){
 			printf "\t$_verd%s$_r%s\n"			"[1]" " -> FCFS"
 			printf "\t$_sel%s%s$_r\n"			"[2]" " -> SJF"
 			alg="SJF"
+			sleep 0.3
+			;;
+	esac
+
+	clear
+	cabecera
+	printf "\n$_cyan$_b%s\n\n$_r"		" Escoja un algoritmo de reemplazo de páginas:"
+	printf "\t$_verd%s$_r%s\n"			"[1]" " -> Reloj"
+	printf "\t$_verd%s$_r%s\n\n"		"[2]" " -> Segunda Oportunidad"
+	read -p " Seleccione la opción: " algReemSeleccionado
+	
+	until [[ $algReemSeleccionado =~ ^[1-2]$ ]]; do
+		printf "\n$_rojo$_b%s$_r%s"	" Valor incorrecto." " Escriba '1' o '2': "
+		read algSeleccionado
+	done
+
+	case $algReemSeleccionado in
+		1) # Muestra la opción 1 seleccionada.
+			clear
+			cabecera
+			printf "\n$_cyan$_b%s\n\n$_r"		" Escoja un algoritmo de reemplazo de páginas:"
+			printf "\t$_sel%s%s$_r\n"			"[1]" " -> Reloj"
+			printf "\t$_verd%s$_r%s\n"			"[2]" " -> Segunda Oportunidad"
+			algReemplazo="RELOJ"
+			sleep 0.3
+			;;
+		2) # Muestra la opción 2 seleccionada.
+			clear
+			cabecera
+			printf "\n$_cyan$_b%s\n\n$_r"		" Escoja un algoritmo de reemplazo de páginas:"
+			printf "\t$_verd%s$_r%s\n"			"[1]" " -> Reloj"
+			printf "\t$_sel%s%s$_r\n"			"[2]" " -> Segunda Oportunidad"
+			algReemplazo="SEGOP"
 			sleep 0.3
 			;;
 	esac
@@ -458,7 +492,11 @@ function seleccionEntrada(){
 	calculaEspaciosMemoria
 
 	for (( proc=1; proc<=$nProc; proc++ )); do
-		reloj $proc
+		if [ "$algReemplazo" = "SEGOP" ]; then
+			segundaOportunidad $proc
+		else
+			reloj $proc
+		fi
 	done
 }
 
@@ -925,9 +963,9 @@ function entradaManualRangos(){
 	read minRangoNumMarcos
 	echo -n " Introduzca el mínimo del número de marcos asociados a cada proceso: " >> $informe
 	echo -n -e " Introduzca el mínimo del \e[1;33mnúmero de marcos asociados\e[0m a cada proceso: " >> $informeColor
-	until [[ $minRangoNumMarcos =~ [0-9] && $minRangoNumMarcos -ge 0 ]]; do
+	until [[ $minRangoNumMarcos =~ [0-9] && $minRangoNumMarcos -ge 0 && $minRangoNumMarcos -le $marcosMem ]]; do
 		echo ""
-		echo -e "\e[1;31m El mínimo del número de marcos asociados a cada proceso debe ser un número positivo\e[0m"
+		echo -e "\e[1;31m El mínimo del número de marcos asociados a cada proceso debe ser un número positivo menor que el nº marcos totales\e[0m"
 		echo -n -e " Introduzca el mínimo del \e[1;33mnúmero de marcos asociados\e[0m a cada proceso: "
 		read minRangoNumMarcos
 	done
@@ -943,9 +981,9 @@ function entradaManualRangos(){
 	read maxRangoNumMarcos
 	echo -n " Introduzca el máximo del número de marcos asociados a cada proceso: " >> $informe
 	echo -n -e " Introduzca el máximo del \e[1;33mnúmero de marcos asociados\e[0m a cada proceso: " >> $informeColor
-	until [[ $maxRangoNumMarcos =~ [0-9] && $maxRangoNumMarcos -ge $minRangoNumMarcos ]]; do
+	until [[ $maxRangoNumMarcos =~ [0-9] && $maxRangoNumMarcos -ge $minRangoNumMarcos && $maxRangoNumMarcos -le $marcosMem ]]; do
 		echo ""
-		echo -e "\e[1;31m El máximo número del rango de marcos asociados a cada procesos debe ser un número positivo mayor o igual que $minRangoNumMarcos \e[0m"
+		echo -e "\e[1;31m El máximo número del rango de marcos asociados a cada procesos debe ser un número positivo mayor o igual que $minRangoNumMarcos y menor que el nº de marcos totales \e[0m"
 		echo -n -e " Introduzca el máximo del \e[1;33mnúmero de marcos asociados\e[0m a cada proceso: "
 		read maxRangoNumMarcos
 	done		
@@ -1040,8 +1078,8 @@ function entradaManualRangos(){
 	printf "\n%s\n" " Pulse INTRO para continuar ↲"
 	read
 
-	guardaDatos
 	guardaRangos
+	guardaDatos
 	imprimeProcesosFinal
 }
 
@@ -1769,13 +1807,13 @@ function aleatorioEntre() {
 # Genera un valor aleatorio y los números pueden ser o no negativos (el anterior solo es para positivos) -> fusionar si eso.
 function aleatorioEntreConNegativos() {
     
-	eval "${1}=$((RANDOM % ($3 - $2 + 1) + $2))"
+	# eval "${1}=$((RANDOM % ($3 - $2 + 1) + $2))"
 
-	# if [[ $3 -lt $2 ]]; then
-    #     eval "${1}=$2"
-    # else
-    #     eval "${1}=$((RANDOM % ($3 - $2 + 1) + $2))"
-    # fi
+	if [[ $3 -lt $2 ]]; then
+        eval "${1}=$2"
+    else
+        eval "${1}=$((RANDOM % ($3 - $2 + 1) + $2))"
+    fi
 }
 
 ###################################################################################################################################
@@ -1821,6 +1859,14 @@ function calculaAnchos(){
 	done
 
 	[[ ${#tSistema} -ge $anchoUnidadBarras ]] && anchoUnidadBarras=$((${#tSistema}+1))
+
+	#RESUMEN MARCOS
+	for ((m=0;m<marcosMem;m++));do
+		anchoResumenMarco[$m]=2
+		# si la referencia del marco(M00) ocupa más de 3 huecos
+		[[ $((${#m}+1)) -ge "3" ]] && anchoResumenMarco[$m]=$((${#m}+1))
+		[[ ${#memoriaPagina[$m]} -gt ${anchoResumenMarco[$m]} ]] && anchoResumenMarco[$m]=${#memoriaPagina[$m]}
+	done
 }
 
 
@@ -1875,12 +1921,15 @@ function reloj(){
 	for ((i = 0; i < $tiempoEjecucion; i++))
 	do
 	 	paginaActual=${paginasProceso[$i]}
-	 	encontrarYactualizar
+	 	encontrarYactualizarReloj
 	 	if [[ $? -eq 1 ]]
 	 	then
-	 		reemplazarYactualizar
+	 		reemplazarYactualizarReloj
+			procesoTiempoMarcoFallo[$1,$i]="F"
 	 		((numeroFallos++))
-	 	fi
+	 	else
+			procesoTiempoMarcoFallo[$1,$i]=" "
+		fi
 	 	# Guardar el orden de memoria
 	 	procesoTiempoMarcoPuntero[$1,$i]=$puntero
 
@@ -1889,7 +1938,7 @@ function reloj(){
 	 	done
 
 	 	for (( j = 0; j < ${numeroMarcos}; j++ )); do
-            procesoTiempoMarcoBitsReloj[$1,$i,$j]=${bitReloj[$j]}
+            procesoTiempoMarcoBits[$1,$i,$j]=${bitReloj[$j]}
        done
 	done
 	# Se guardan los fallos de paginación del proceso.
@@ -1899,7 +1948,7 @@ function reloj(){
 ###################################################################################################################################
 
 # Función auxiliar. Devuelve '0' si la página buscada se encuentra en memoria y '1' si no está en memoria.
-function encontrarYactualizar(){
+function encontrarYactualizarReloj(){
 
 	for ((j = 0; j < $numeroMarcos; j++)); do
 		if [[ ${memoriaMarcos[$j]} -eq $paginaActual ]]
@@ -1915,7 +1964,7 @@ function encontrarYactualizar(){
 # Función auxiliar. Lleva a cabo el proceso de reemplazo de una página si fuera necesario.
 #	- Si el bit de la página apuntada por el puntero es 1, se cambia a 0 y se avanza el puntero al siguiente marco.
 #	- Si el bit es 0, se actualiza esa página con la nueva página '$paginaActual', se establece el bit a 1 y se avanza el puntero.
-function reemplazarYactualizar(){
+function reemplazarYactualizarReloj(){
 
 	while :; do
 		if [[ ${bitReloj[$puntero]} -eq 0 ]]; then
@@ -1930,6 +1979,88 @@ function reemplazarYactualizar(){
 }
 
 ###################################################################################################################################
+
+
+###############################################
+#        ALGORITMO SEGUNDA OPORTUNIDAD        #
+###############################################
+
+# Función principal del algoritmo de Segunda Oportunidad. Calcula las páginas del proceso, establece las variables necesarias e itera
+# sobre cada página para ejecutar el algoritmo.
+function segundaOportunidad(){
+
+	# Calcular paginas del proceso
+	pagsegop=()
+	for (( i = 0; i < ${tEjec[$1]}; i++ )); do
+		pagsegop[$i]=${paginas[$1,$i]}
+	done
+
+	numeroMarcos=${nMarcos[$1]}
+	tiempoEjecucion=${#pagsegop[*]}
+	puntero=0
+	numeroFallos=0
+	bitSegOp=()
+	memoriaMarcos=()
+
+	for ((i = 0; i < $numeroMarcos; i++)); do
+		memoriaMarcos[$i]=-1
+		bitSegOp[$i]=0
+	done
+	procesoTiempoMarcoPuntero[$1,-1]=$puntero
+
+	for ((i = 0; i < $tiempoEjecucion; i++)); do
+		#procesoTiempoMarcoPuntero[$1,$i]=$puntero
+		paginaActual=${pagsegop[$i]}
+		encontrarYactualizarSegOp 
+		if [[ $? -eq 1 ]]; then
+			reemplazarYactualizarSegOp
+			procesoTiempoMarcoFallo[$1,$i]="F"
+	 		((numeroFallos++))
+	 	else
+			procesoTiempoMarcoFallo[$1,$i]=" "
+		fi
+
+		# Guardar el orden de memoria
+		procesoTiempoMarcoPuntero[$1,$i]=$puntero
+		for (( j = 0; j < ${numeroMarcos}; j++ )); do
+			procesoTiempoMarcoPagina[$1,$i,$j]=${memoriaMarcos[$j]}
+		done
+
+	    for (( j = 0; j < ${numeroMarcos}; j++ )); do
+            procesoTiempoMarcoBits[$1,$i,$j]=${bitSegOp[$j]}
+        done
+	done
+	fallos[$1]=$numeroFallos
+}
+
+
+###################################################################################################################################
+
+# Función auxiliar. Devuelve '0' si la página buscada se encuentra en memoria (y actualiza el bit de segOp) y '1' si no está en memoria.
+function encontrarYactualizarSegOp(){
+	for ((j = 0; j < $numeroMarcos; j++)); do
+		if [[ ${memoriaMarcos[$j]} -eq $paginaActual ]]; then
+			bitSegOp[$j]=1
+			return 0
+		fi
+	done
+	return 1
+}
+
+###################################################################################################################################
+
+# Función auxiliar. Lleva a cabo el proceso de reemplazo de una página si fuera necesario.
+function reemplazarYactualizarSegOp(){
+	while :; do
+		if [[ ${bitSegOp[$puntero]} -eq 0 ]]; then
+			memoriaMarcos[$puntero]=$paginaActual
+			puntero=$((($puntero+1)%$numeroMarcos))
+			return 1
+		fi
+		bitSegOp[$puntero]=0
+		puntero=$((($puntero+1)%$numeroMarcos))
+	done
+}
 
 
 
@@ -2020,7 +2151,7 @@ function diagramaResumen(){
 		
 		# Estado del proceso
 		if [[ ${tLlegada[$ord]} -le $tSistema ]]; then
-			if [[ ${tiempoRestante[$ord]} -eq 0 ]]; then
+			if [[ ${tiempoRestante[$ord]} -eq 0 ]] && [[ ${enMemoria[$ord]} == "salido" ]]; then
 				printf "%s"		" Finalizado      " | tee -a $informeColor
 				printf "%s"		" Finalizado      " >> $informe
 			else		
@@ -2092,7 +2223,7 @@ function diagramaResumen(){
 # Calcula y muestra por pantalla el tiempo medio de espera y el tiempo medio de llegada.
 function resumenTMedios(){
     tMedioEsp=0
-    local tMedioRet
+    tMedioRet=0
     local total=0
     local contador=0
 
@@ -2128,104 +2259,102 @@ function resumenTMedios(){
 
 ###################################################################################################################################
 
-muestraTablaFallosPag() {
 
-	local letra="a"
 
-  if [[ $opcionEjec = 1 || $opcionEjec = 2 ]]; then
-    filasPaginas=$(
-      echo -n -e "    "
-      for ((p = 0; p < ${tEjec[$ejecutandoAntiguo]}; p++)); do
-        printf " %9s" "${paginas[$ejecutandoAntiguo,$p]}"
-      done
-    )
 
-    filasMarcos=()
-    for ((m = 0; m < ${nMarcos[$ejecutandoAntiguo]}; m++)); do
-      filasMarcos[$m]=$(
-        r=-1
-        if [[ -z ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} ]] || [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq -1 ]]; then
-          printf " "
-          if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then
-            printf "%4s" "sM$m"
-          else
-            printf "%3s" "M$m"
-          fi
+muestraTablaFallosPag(){
+
+	local _f="\e[1;3${colorines[$ejecutandoAntiguo]}m"		# Color del proceso que se acaba de terminar de ejecutar.
+	#local _res="\e[47m\e[30m"								# Para resaltar el marco que causó el fallo de página en cada instante.
+	local _res="\e[4${colorines[$ejecutandoAntiguo]}m"
+	printf "\n Se han producido $_f$_b%d$_r fallos de página en la ejecución de $_f$_b%s$_r" "${fallos[$ejecutandoAntiguo]}" "${Ref[$ejecutandoAntiguo]}" | tee -a $informeColor
+	printf "\n Se han producido %d fallos de página en la ejecución de %s" "${fallos[$ejecutandoAntiguo]}" "${Ref[$ejecutandoAntiguo]}" >> $informe
+	
+	filaPaginas=()
+	filaFallos=()
+	declare -A filaMarcos
+	declare -A filaMarcosBN
+	local mayorMar=$((${#marcoFinal[$ejecutandoAntiguo]}+1))		# Valor mayor de los marcos de memoria.
+	local mayorPag=0										# Valor mayor de las páginas del proceso.
+	for (( i = 0; i < ${tEjec[$ejecutandoAntiguo]}; i++ )); do
+		[ ${#paginas[$ejecutandoAntiguo,$i]} -gt $mayorPag ] && mayorPag=${#paginas[$ejecutandoAntiguo,$i]}
+	done
+	ind=0				# Número de línea en la que se escribe el marco (si no caben en la pantalla hay saltos de línea).
+	columnas=0			# Ancho en caracteres de las columnas que se han ido mostrando en la pantalla.
+	local anchuraCol=$(( mayorPag + 2 ))	# página+'-'+bit
+	local contenido
+
+	# Primer instante, marcos vacíos. La manecilla apunta al primer marco.
+	filaPaginas[$ind]="${filaPaginas[$ind]}$( printf "%s%-*s" " " "$mayorMar" )"
+	filaFallos[$ind]="${filaFallos[$ind]}$( printf "%s%-*s" " " "$mayorMar" )"
+	for ((m = 0; m < ${nMarcos[$ejecutandoAntiguo]}; m++)); do
+       	
+		let mar=m+marcoInicial[$ejecutandoAntiguo]
+		if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,-1]} -eq $m ]]; then
+			filaMarcos[$ind,$m]="$( printf "$_u%-*s$_r" "$mayorMar" "M$mar" )"
         else
-          printf " "
-          if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then
-            echo -n -e "s"
-          fi
-          printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBitsReloj[$ejecutandoAntiguo,$r,$m]}"
+            filaMarcos[$ind,$m]="$( printf "%-*s" "$mayorMar" "M$mar" )"
         fi
-        echo -n -e "f"
+	done
 
-        for ((r = 0; r < ${tEjec[$ejecutandoAntiguo]}; r++)); do
-          # Si el marco está vacio
-          if [[ -z ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} ]] || [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq -1 ]]; then
-            printf " %6s"
-            if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then
-              printf "%4s" "sM$m"
-            else
-              printf "%3s" "M$m"
-            fi
-          else
-            printf " "
-            if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then
-              echo -n -e "s"
-            fi
-            printf "M%-2sf-%3d-%d" "$m" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBitsReloj[$ejecutandoAntiguo,$r,$m]}"
-          fi
-          echo -n -e "f"
-        done
-      )
+	# Resto de instantes, se muestran los números de página y valores de bits de reloj.
+	for ((r = 0; r < ${tEjec[$ejecutandoAntiguo]}; r++)); do				# Tiempo.
+		
+		if [[ $columnas -gt $(($anchura-$anchuraCol-$anchuraCol)) ]]; then	# Si no cabe, incrementar la línea.
+	 	 	((ind++))
+			columnas=0
+			filaPaginas[$ind]="${filaPaginas[$ind]}$( printf "%s%-*s" " " "$mayorMar" )"
+			filaFallos[$ind]="${filaFallos[$ind]}$( printf "%s%-*s" " " "$mayorMar" )"
+			for ((m = 0; m < ${nMarcos[$ejecutandoAntiguo]}; m++)); do
+				let mar=m+marcoInicial[$ejecutandoAntiguo]
+				filaMarcos[$ind,$m]="$( printf "%-*s" "$mayorMar" "M$mar" )"
+			done
+		fi
+		filaPaginas[$ind]="${filaPaginas[$ind]}$( printf "%s%*s%s" "  " "$anchuraCol" "${paginas[$ejecutandoAntiguo,$r]}" " " )"
+		filaFallos[$ind]="${filaFallos[$ind]}$( printf "%s%*s%s" "  " "$anchuraCol" "${procesoTiempoMarcoFallo[$ejecutandoAntiguo,$r]}" " " )"
+
+		for ((m = 0; m < ${nMarcos[$ejecutandoAntiguo]}; m++)); do			# Marcos.	
+
+			filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf " │ " )"
+		  	# Si el marco está vacio
+          	if [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq -1 ]] || [[ -z ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} ]] ; then
+								
+            	if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then		# Si le apunta la manecilla se subraya.
+					filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "$_u%*s$_r" "$anchuraCol" )"
+            	else
+					filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "%*s" "$anchuraCol")"
+            	fi
+          	else
+				contenido=$( printf "%s-%s" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBits[$ejecutandoAntiguo,$r,$m]}" )
+				
+				# Si es el marco que ocasionó un fallo de página se resalta.
+				if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$((r-1))]} -eq $m ]] && [[ ${procesoTiempoMarcoFallo[$ejecutandoAntiguo,$r]} == "F" ]]; then
+					filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "$_res%*s$_r" "$anchuraCol" "$contenido" )"
+
+            	elif [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then		# Si le apunta la manecilla se subraya.
+					filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "$_u%*s$_r" "$anchuraCol" "$contenido" )"
+				else
+					filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "%*s" "$anchuraCol" "$contenido" )"
+				fi
+          	fi
+		done
+		columnas=$((columnas + anchuraCol + 3))
     done
+	
+	for ((i = 0; i <= $ind; i++)); do
+	 	printf "\n $_f$_b%s$_r" "${filaPaginas[$i]}" | tee -a $informeColor
+		printf "\n %s" "${filaPaginas[$i]}" >> $informe
 
-    caracterInicialPaginas=0
-    caracterInicialMarcos=()
-    for ((i = 0; i < ${nMarcos[$ejecutandoAntiguo]}; i++)); do
-      caracterInicialMarcos[$i]=0
-    done
+		for ((m = 0; m < ${nMarcos[$ejecutandoAntiguo]}; m++)); do
+			printf "\n %s" "${filaMarcos[$i,$m]}" | tee -a $informeColor
+			#printf "\n %s" "${filaMarcosBN[$i,$m]}" >> $informe
+	 	done
 
-    informeResumen=$(
-      echo -e -n "\e[1;3${colorines[$ejecutandoAntiguo]}m"
-      colsTerminal=`tput cols`
-      while [[ $caracterInicialPaginas -lt ${#filasPaginas} ]]; do
-        caracterDos=0
-        for ((caracter = $caracterInicialPaginas; caracterDos < $colsTerminal; caracter++)); do
-          echo -n "${filasPaginas:$caracter:1}"
-          ((caracterInicialPaginas++))
-          ((caracterDos++))
-        done
-        echo
-
-        for ((mar = 0; mar < ${nMarcos[$ejecutandoAntiguo]}; mar++)); do
-          caracterDos=0
-          for ((caracter = ${caracterInicialMarcos[$mar]}; caracterDos < $colsTerminal; caracter++)); do
-            cadena=${filasMarcos[$mar]}
-            letra="${cadena:$caracter:1}"
-            if [[ "$letra" == "s" ]]; then
-              echo -e -n "\e[4m"
-            elif [[ "$letra" == "f" ]]; then
-              echo -e -n "\e[24m"
-            else
-              echo -n "$letra"
-              ((caracterDos++))
-            fi
-            ((caracterInicialMarcos[$mar]++))
-          done
-          echo -e "\e[24m"
-        done
-
-      done
-      echo -n -e "\e[0m"
-    )
-
-    echo -n -e "$informeResumen" | tee -a $informeColor
-    echo -n "$informeResumen" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" >>$informe
-  fi
-
-  # imprimeNRU
+		printf "\n $_f$_b%s$_r" "${filaFallos[$i]}" | tee -a $informeColor
+		printf "\n %s" "${filaFallos[$i]}" >> $informe
+		printf "\n"
+	done
+	#printf "\n\n"	# sustituir por imprimehuecos...
 }
 
 ###################################################################################################################################
@@ -2235,12 +2364,8 @@ function resumenFinal(){
 
 	clear
 	imprimeHuecosInformes 3 0
-	#media 'esperaSinLlegada[@]'
-	#mediaEspera=$laMedia			# daba errores. comprobar o modificar
 	mediaEspera=$tMedioEsp
-	media 'duracion[@]'
-	mediaDurac=$laMedia
-	laMedia=0
+	mediaDurac=$tMedioRet			# este iba bien pero es para borrar la función
 	local _c="\e[1;3${colorines[$counter]}m"	# Color del proceso a imprimir.
 
 	printf "\n$_cyan%s$_r"							" ╔═══════════════════════════╗" | tee -a $informeColor
@@ -2270,7 +2395,7 @@ function resumenFinal(){
 	for (( counter=1; counter <= $nProc; counter++ )); do
 		_c="\e[1;3${colorines[$counter]}m"
 		printf "\n $_c$_b%-5s%11d%8d/%-7d%9d%14d$_r" 	"${Ref[$counter]}" "${esperaSinLlegada[$counter]}" "${tLlegada[$counter]}" "${procesotFin[$counter]}" "${duracion[$counter]}" "${fallos[$counter]}"  | tee -a $informeColor
-		printf "\n %-5s%11d%8d/%-7d%9d%14d\n" 			"${Ref[$counter]}" "${esperaSinLlegada[$counter]}" "${tLlegada[$counter]}" "${procesotFin[$counter]}" "${duracion[$counter]}" "${fallos[$counter]}"  >> $informe
+		printf "\n %-5s%11d%8d/%-7d%9d%14d" 			"${Ref[$counter]}" "${esperaSinLlegada[$counter]}" "${tLlegada[$counter]}" "${procesotFin[$counter]}" "${duracion[$counter]}" "${fallos[$counter]}"  >> $informe
 	done
 
 	imprimeHuecosInformes 2 1
@@ -2291,21 +2416,6 @@ function resumenFinal(){
 #        ÚTILES       #
 #######################
 
-media(){
-	local vector=("${!1}")
-	laMedia=0
-	local tot
-
-	tot=0
-	for (( counter=0; counter< $nProc; counter++ ))
-		do
-			let laMedia=laMedia+vector[$counter]
-			((tot++))
-		done
-	laMedia=`(echo "scale=3;$laMedia/$tot" | bc -l)`
-}
-
-############
 
 # Suma a los procesos que no están ejecutándose (y no han terminado) el tiempo de espera.
 sumaTiempoEspera(){
@@ -2469,7 +2579,7 @@ function ejecucion(){
 	ordenacion
 	ejecutando="vacio"
 
-	if [[ ${tEjec[${ordenados[1]}]} -ne 0 ]]; then		# Si no va a llegar ningún proceso en el primer instante, se imprime vacío.
+	if [[ ${tLlegada[${ordenados[1]}]} -ne 0 ]]; then		# Si no va a llegar ningún proceso en el primer instante, se imprime vacío.
 		mostrarPantalla=1
 		volcadoAPantalla
 	fi
@@ -2520,7 +2630,6 @@ function ejecucion(){
 		if [ $ejecutando != "vacio" ]; then
 			((nPagAEjecutar[$ejecutando]++))
 
-
 			# se asignan las páginas que están en cada marco del proceso en ese instante
 			# el procesotiempomarco... es relativo. es decir, t=0 será el primer instante de ejec del proceso, no necesariamente
 			# del algoritmo. al igual que m=0 será el primer marco del proceso (que puede ser M0, m1,m2...)
@@ -2531,8 +2640,6 @@ function ejecucion(){
 				if [[ ${memoriaPagina[$index]} == -1 ]]; then	#si es -1 significa que está vacío
     				unset memoriaPagina[$index]
 				fi
-				# echo "${procesoTiempoMarcoPagina[$ejecutando,$tiem,$i]}"
-				# read
 			done
 		fi
 
@@ -2605,7 +2712,7 @@ function gestionFinalizacionProceso(){
         unset "memoriaProceso[$mar]"
         unset "memoriaPagina[$mar]"
     done
-	# unset "marcoInicial[$ejecutando]"
+	# unset "marcoInicial[$ejecutando]" # se puede hacer así para que en el resumen aparezca -
 	# unset "marcoFinal[$ejecutando]"
 
     calculaEspaciosMemoria
@@ -2631,10 +2738,13 @@ function volcadoAPantalla(){
             imprimeCabeceraAlgoritmo
 			imprimeLogEventos
             diagramaResumen
-			if [[ $haFinalizadoProceso -eq 1 ]];then
-            	muestraTablaFallosPag
+			if [[ $haFinalizadoProceso -eq 1 ]]; then
+				muestraTablaFallosPag
 			fi
 			haFinalizadoProceso=0
+			printf "\n"
+			imprime_marcos
+			printf "\n"
 			imprime_barra_memoria
             imprime_barra_tiempo
 			read -p " Pulse INTRO para continuar ↲ "
@@ -2645,7 +2755,7 @@ function volcadoAPantalla(){
             imprimeCabeceraAlgoritmo
 			imprimeLogEventos
             diagramaResumen
-            if [[ $haFinalizadoProceso -eq 1 ]];then
+            if [[ $haFinalizadoProceso -eq 1 ]]; then
             	muestraTablaFallosPag
 			fi
 			haFinalizadoProceso=0
@@ -2741,8 +2851,6 @@ imprime_barra_tiempo(){
 	local -A barraT_BN
 	local formato="\e[1;3${colorines[${tiempoProceso[$tiempo]}]}m"
 	local anchoprebarra=3
-	#local anchopostbarra=$((5+${#marcosTotales}))
-    #local anchopostbarra=$marcosMem
 	local anchopostbarra=$((5+${#marcosMem}))
 	local p=0			# Proceso en el marco actual.
 	local aux=0			# Para saber cuántas veces se hace salto de línea si la barra no cabe en la pantalla.
@@ -2818,6 +2926,13 @@ imprime_barra_tiempo(){
 		#si la pagina está vacía
 		if [[ -z ${tiempoPagina[$tiempo]} ]] ;then
 			#poner el color de fondo y escribir un -
+
+			if [[ $tSistema -eq 0 ]];then
+				formato="\e[0m"		# NUEVO AÑADIDO (que si no hay proceso sea transp) -> COMPROBAR SI DA PROBLEMAS
+			else
+				formato="\e[47m\e[30m"
+			fi
+
 			barraT[$aux,$l]="${barraT[$aux,$l]}$( printf "%b%*s\e[0m" "$formato" "$anchoUnidadBarras" " " )"
 
 			barraT_BN[$aux,$l]="${barraT_BN[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" "-" )"
@@ -2827,7 +2942,7 @@ imprime_barra_tiempo(){
 			if [[ $tiempo -eq $tSistema ]];then
 				formato="\e[3${colorines[$p]}m"
 			else
-				formato="\e[4${colorines[$p]}m\e[30m"		# NUEVO AÑADIDO -> COMPROBAR SI DA PROBLEMAS
+				formato="\e[4${colorines[$p]}m\e[30m"		# NUEVO AÑADIDO(que en el primer instante sea transp) -> COMPROBAR SI DA PROBLEMAS
 			fi
 			
 			
@@ -2896,15 +3011,13 @@ imprime_barra_tiempo(){
 	echo >> $informe		# sustituir por imprimehuecos...
 }
 
-
-
-
 #des: muestra el estado de la memoria en cada instante
 imprime_barra_memoria(){ 
+	
 	local -A barraMem
+	local -A barraMem_BN
 	local formato
 	local anchoprebarra=3
-	#local anchopostbarra=$((5+${#marcosTotales}))
 	local anchopostbarra=$((5+${#marcosMem}))
 	local p=0
 	local aux=0
@@ -2926,6 +3039,10 @@ imprime_barra_memoria(){
 			barraMem[$aux,0]="$( printf "%*s|" "$anchoprebarra" " " )"
 			barraMem[$aux,1]="$( printf "%-*s|" "$anchoprebarra" "BM " )"
 			barraMem[$aux,2]="$( printf "%*s|" "$anchoprebarra" " " )"
+
+			barraMem_BN[$aux,0]="$( printf "%*s|" "$anchoprebarra" " " )"
+			barraMem_BN[$aux,1]="$( printf "%-*s|" "$anchoprebarra" "BM " )"
+			barraMem_BN[$aux,2]="$( printf "%*s|" "$anchoprebarra" " " )"
 			((columnas=$anchoprebarra+2))
 		fi
 
@@ -2938,6 +3055,10 @@ imprime_barra_memoria(){
 			barraMem[$aux,0]="    "
 			barraMem[$aux,1]="    "
 			barraMem[$aux,2]="    "
+
+			barraMem_BN[$aux,0]="    "
+			barraMem_BN[$aux,1]="    "
+			barraMem_BN[$aux,2]="    "
 			flag=0
 		fi
 
@@ -2947,8 +3068,13 @@ imprime_barra_memoria(){
 		#si el marco está ocupado y es el primer marco del proceso que lo ocupa
 		if [[ -n ${memoriaProceso[$marco]} ]] && [[ $marco -eq "${marcoInicial[$p]}" ]]; then
 			barraMem[$aux,$l]="${barraMem[$aux,$l]}$( printf "%b%-*s\e[0m" "$formato" "$anchoUnidadBarras" "${Ref[$p]}" )"
+			
+			barraMem_BN[$aux,$l]="${barraMem_BN[$aux,$l]}$( printf "%-*s" "$anchoUnidadBarras" "${Ref[$p]}" )"
+
 			else
 			barraMem[$aux,$l]="${barraMem[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" " " )"
+
+			barraMem_BN[$aux,$l]="${barraMem_BN[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" " " )"
 		fi
 
 	 #Barra del medio
@@ -2963,6 +3089,8 @@ imprime_barra_memoria(){
 		if [[ -z ${memoriaPagina[$marco]} ]] ;then
 			#poner el color de fondo y escribir un -
 			barraMem[$aux,$l]="${barraMem[$aux,$l]}$( printf "%b%*s\e[0m" "$formato" "$anchoUnidadBarras" "-" )"
+
+			barraMem_BN[$aux,$l]="${barraMem_BN[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" "-" )"
 			else
 
 				# if [[ ${enMemoria[$p]} == "salido" ]]; then		# NUEVO AÑADIDO. VER SI FUNCIONA
@@ -2974,6 +3102,8 @@ imprime_barra_memoria(){
 
 			#poner el color y escribir la página que ocupa ese marco
 			barraMem[$aux,$l]="${barraMem[$aux,$l]}$( printf "%b%*s\e[0m" "$formato" "$anchoUnidadBarras" "${memoriaPagina[$marco]}" )"
+
+			barraMem_BN[$aux,$l]="${barraMem_BN[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" "${memoriaPagina[$marco]}" )"
 		fi
 
 	 #Barra de marcos
@@ -2981,8 +3111,12 @@ imprime_barra_memoria(){
 		#si el marco es el primer marco del proceso que lo ocupa o es el primero vacío despues de un proceso
 		if [[ $marco -eq "${marcoInicial[$p]}" ]] || [[ $marco = 0 ]] || { [[ $flag = 0 ]] && [[ -z ${memoriaProceso[$marco]} ]] ;}; then
 			barraMem[$aux,$l]="${barraMem[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" "$marco" )"
+
+			barraMem_BN[$aux,$l]="${barraMem_BN[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" "$marco" )"
 			else 
 			barraMem[$aux,$l]="${barraMem[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" " " )"
+
+			barraMem_BN[$aux,$l]="${barraMem_BN[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" " " )"
 		fi
 		flag=1
 		[[ -n ${memoriaProceso[$marco]} ]] && [[ $marco -eq "${marcoFinal[$p]}" ]] && flag=0
@@ -3002,24 +3136,168 @@ imprime_barra_memoria(){
 				barraMem[$aux,0]="    "
 				barraMem[$aux,1]="    "
 				barraMem[$aux,2]="    "
+
+				barraMem_BN[$aux,0]="    "
+				barraMem_BN[$aux,1]="    "
+				barraMem_BN[$aux,2]="    "
 			fi
 		
 			barraMem[$aux,0]="${barraMem[$aux,0]}$( printf "|" )"
 			barraMem[$aux,1]="${barraMem[$aux,1]}$( printf "|%s" " M=$marcosMem" )"
 			barraMem[$aux,2]="${barraMem[$aux,2]}$( printf "|" )"
+
+			barraMem_BN[$aux,0]="${barraMem_BN[$aux,0]}$( printf "|" )"
+			barraMem_BN[$aux,1]="${barraMem_BN[$aux,1]}$( printf "|%s" " M=$marcosMem" )"
+			barraMem_BN[$aux,2]="${barraMem_BN[$aux,2]}$( printf "|" )"
 			((columnas=$columnas+$anchopostbarra))
 			break
 		fi
 	done
-	#imprimir todo
+
 	for (( i=0;i<=aux;i++ )); do	
 		for ((j=0 ; j<=l ; j++)); do
-			printf "\n %s" "${barraMem[$i,$j]}"
+			printf "\n %s" "${barraMem[$i,$j]}" | tee -a $informeColor
+
+			printf "\n %s" "${barraMem_BN[$i,$j]}" >> $informe
 		done
 	done
+	echo | tee -a $informeColor
+	echo >> $informe		# sustituir por imprimehuecos...
 }
 
 
+imprime_marcos(){
+	local anchopostbarra=$((5+${#marcosMem}))
+	local espacios=0
+	local formato=""
+	declare -A resumenmarcos
+	local aux=0
+	local l
+	local columnas=1
+	echo -n " Marcos de página "
+
+	#inicializar vector
+	resumenmarcos[$aux,0]=""	#linea de procesos
+	resumenmarcos[$aux,1]=""	#linea de marcos
+	resumenmarcos[$aux,2]=""	#linea de páginas
+	resumenmarcos[$aux,3]=""	#linea de coeficientes
+
+
+	for (( marco=0 ; marco<marcosMem; marco++ )); do
+		#si hay un proceso 
+		if [[ -n ${memoriaProceso[$marco]} ]] ;then
+			#metemos el proceso en una variable (por comodidad)
+			p=${memoriaProceso[$marco]}
+		fi
+
+		#Incrementar el contador en el numero de caracteres que ocupe lo que hay que escribir.
+		((columnas=columnas+${anchoResumenMarco[$marco]}+1))
+		#comprobar si cabe lo que quiero escribir
+		if [[ $columnas -gt $anchura ]]
+		then	#si no cabe, incrementar la linea.
+			((aux++))
+			#inicializar la nueva linea 
+			columnas=1
+			resumenmarcos[$aux,0]=""
+			resumenmarcos[$aux,1]=""
+			resumenmarcos[$aux,2]=""
+			resumenmarcos[$aux,3]=""
+		fi
+
+	 #Procesos
+		l=0
+		formato="\e[1;3${colorines[$p]}m"
+		#si el marco está ocupado y es el primer marco del proceso que lo ocupa
+		if [[ -n ${memoriaProceso[$marco]} ]] && [[ $marco -eq "${marcoInicial[$p]}" ]]; then
+			espacios=1
+			[[ ${anchoResumenMarco[$marco]} -lt "3" ]] && espacios=0
+			resumenmarcos[$aux,$l]="${resumenmarcos[$aux,$l]}$( printf "%b%-*s\e[0m%*s" "$formato" "${anchoResumenMarco[$marco]}" "${Ref[$p]}" "$espacios" "" )"
+			else
+			resumenmarcos[$aux,$l]="${resumenmarcos[$aux,$l]}$( printf "%*s " "${anchoResumenMarco[$marco]}" "" )"
+		fi
+	 #Marcos
+		l=1
+		#imprimimos el nombre del marco en el color del proceso que lo ocupa.
+		if [[ -z ${memoriaProceso[$marco]} ]]; then
+				#sin color, en negrita
+				resumenmarcos[$aux,$l]=${resumenmarcos[$aux,$l]}"$( printf "\e[1m%-*s\e[0m " "${anchoResumenMarco[$marco]}" "M$marco" )"
+			#si el marco es el marcosiguiente donde se van a meter páginas 
+			elif [[ $marco = "$siguienteMarco" ]];then	
+				#color y subrayar
+				resumenmarcos[$aux,$l]=${resumenmarcos[$aux,$l]}"$( printf "%b%-*s\e[0m " "\e[4m\e[1;3${colorines[$p]}m" "${anchoResumenMarco[$marco]}" "M$marco" )"
+			else
+				#color
+				resumenmarcos[$aux,$l]=${resumenmarcos[$aux,$l]}"$( printf "%b%-*s\e[0m " "\e[1;3${colorines[$p]}m" "${anchoResumenMarco[$marco]}" "M$marco" )"
+		fi
+
+	 #Páginas
+		l=2
+		#calcular cuantos espacios dejar antes de la pagina.
+		espacios=0
+		#si la pagina ocupa menos que el marco, calcular cuantos espacios (lo que ocupa el Mmarco - lo que ocupa la pagina)
+		[[ ${#memoriaPagina[$marco]} -lt ${anchoResumenMarco[$marco]} ]] && espacios=$(( ${anchoResumenMarco[$marco]}-${#memoriaPagina[$marco]} ))
+		
+		#imprimimos la página en el color del proceso que ocupa el marco.
+		#si el marco es el marcosiguiente donde se van a meter páginas 
+
+		if [[ $marco = "$siguienteMarco" ]];then		#cambiar. tiene que ser lo de procesotiempo...con el puntero CREO
+			#añadir subrayado al formato.
+			formato="\e[4m\e[1;3${colorines[$p]}m"
+			elif [[ -n ${memoriaProceso[$marco]} ]];then
+			#formato normal(color del proceso) en negrita
+			formato="\e[1;3${colorines[$p]}m"
+			else
+			formato="\e[0m"
+		fi
+		# si no hay proceso
+		if [[ -z ${memoriaProceso[$marco]} ]]; then 	# vacío
+			resumenmarcos[$aux,$l]=${resumenmarcos[$aux,$l]}"$( printf "%*s%b%s\e[0m " "$espacios" "" "$formato" "" )"
+		# si no hay página
+		elif [[ -z ${memoriaPagina[$marco]} ]]; then 	# guión
+			espacios=$(( ${#marco} ))
+			resumenmarcos[$aux,$l]=${resumenmarcos[$aux,$l]}"$( printf "%*s%b%s\e[0m " "$espacios" "" "$formato" "-" )"
+		else # página
+			resumenmarcos[$aux,$l]=${resumenmarcos[$aux,$l]}"$( printf "%*s%b%s\e[0m " "$espacios" "" "$formato" "${memoriaPagina[$marco]}" )"
+		fi
+	 #Coeficientes
+		l=3
+
+		# if [[ -n ${memoriaBitR[$marco]} ]]; then #procesotiempo...bits
+		# 	resumenmarcos[$aux,$l]="${resumenmarcos[$aux,$l]}$( printf "%b%*s \e[0m" "\e[1;3${colorines[$p]}m" "${anchoResumenMarco[$marco]}" "${memoriaBitR[$marco]}" )"
+		# 	elif [[ ${memoriaProceso[$marco]} -eq $enEjecucion ]] && [[ -n ${memoriaProceso[$marco]} ]];then
+		# 	resumenmarcos[$aux,$l]="${resumenmarcos[$aux,$l]}$( printf "%*s " "${anchoResumenMarco[$marco]}" "-")"
+		# 	else
+		# 	resumenmarcos[$aux,$l]="${resumenmarcos[$aux,$l]}$( printf "%*s " "${anchoResumenMarco[$marco]}" "")"
+		# fi
+
+	 # Datos extra del numero de marcos
+		#si el marco es el último
+		if [[ $marco = $((marcosMem-1)) ]];then
+			#contar tambien lo que va a ocupar M=...
+			((columnas=columnas+4+${#marco}))
+
+			#comprobar si cabe lo que quiero escribir
+			if [[ $columnas -gt $anchura ]]
+			then	#si no cabe, incrementar la linea.
+				((aux++))
+				#inicializar la nueva linea con 5 espacios para que guarde el margen
+				columnas=1
+				barraMem[$aux,1]=" "
+			fi
+				#si el marco es el último
+			resumenmarcos[$aux,1]=${resumenmarcos[$aux,1]}"$( printf "| M=%s" "$marcosMem" )"
+		fi
+	
+	done
+
+	#imprimir todo
+	for (( i=0;i<=aux;i++ )); do
+		for ((j=0 ; j<=l ; j++)); do
+			printf "\n %s" "${resumenmarcos[$i,$j]}"
+		done
+	done
+	echo ""
+}
 
 
 
