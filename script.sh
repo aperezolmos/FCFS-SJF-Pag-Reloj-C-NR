@@ -483,13 +483,13 @@ function seleccionTipoEjecucion(){
 	clearYCabecera
 	case $opcionEjec in
 		1) # Muestra la opción 1 seleccionada.
-			printf "\n$_cyan$_b%s\n\n$_r"		" ¿Qué opción desea realizar?" | tee -a $informeColor
+			printf "\n$_cyan$_b%s\n\n$_r"		" Seleccione el tipo de ejecución:" | tee -a $informeColor
 			printf "\t$_sel%s%s$_r\n"			"[1]" " -> Por eventos (pulsando INTRO en cada cambio de estado)" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[2]" " -> Automática (introduciendo cada cuántos segundos cambia de estado)" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[3]" " -> Automática sin esperas" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n\n"		"[4]" " -> Completa (solo resumen)" | tee -a $informeColor
 
-			printf "\n%s\n\n"					" ¿Qué opción desea realizar?" >> $informe
+			printf "\n%s\n\n"					" Seleccione el tipo de ejecución:" >> $informe
 			printf "\t%s%s\n"					" -> [1]" " Por eventos (pulsando INTRO en cada cambio de estado) <-" >> $informe
 			printf "\t%s%s\n"					"[2]" " Automática (introduciendo cada cuántos segundos cambia de estado)" >> $informe
 			printf "\t%s%s\n"					"[3]" " Automática sin esperas" >> $informe
@@ -497,13 +497,13 @@ function seleccionTipoEjecucion(){
 			sleep 0.3
 			;;
 		2) # Muestra la opción 2 seleccionada.
-			printf "\n$_cyan$_b%s\n\n$_r"		" ¿Qué opción desea realizar?" | tee -a $informeColor
+			printf "\n$_cyan$_b%s\n\n$_r"		" Seleccione el tipo de ejecución:" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[1]" " -> Por eventos (pulsando INTRO en cada cambio de estado)" | tee -a $informeColor
 			printf "\t$_sel%s%s$_r\n"			"[2]" " -> Automática (introduciendo cada cuántos segundos cambia de estado)" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[3]" " -> Automática sin esperas" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n\n"		"[4]" " -> Completa (solo resumen)" | tee -a $informeColor
 
-			printf "\n%s\n\n"					" ¿Qué opción desea realizar?" >> $informe
+			printf "\n%s\n\n"					" Seleccione el tipo de ejecución:" >> $informe
 			printf "\t%s%s\n"					"[1]" " Por eventos (pulsando INTRO en cada cambio de estado)" >> $informe
 			printf "\t%s%s\n"					" -> [2]" " Automática (introduciendo cada cuántos segundos cambia de estado) <-" >> $informe
 			printf "\t%s%s\n"					"[3]" " Automática sin esperas" >> $informe
@@ -517,13 +517,13 @@ function seleccionTipoEjecucion(){
 			done
 			;;
 		3) # Muestra la opción 3 seleccionada.
-			printf "\n$_cyan$_b%s\n\n$_r"		" ¿Qué opción desea realizar?" | tee -a $informeColor
+			printf "\n$_cyan$_b%s\n\n$_r"		" Seleccione el tipo de ejecución:" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[1]" " -> Por eventos (pulsando INTRO en cada cambio de estado)" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[2]" " -> Automática (introduciendo cada cuántos segundos cambia de estado)" | tee -a $informeColor
 			printf "\t$_sel%s%s$_r\n"			"[3]" " -> Automática sin esperas" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n\n"		"[4]" " -> Completa (solo resumen)" | tee -a $informeColor
 
-			printf "\n%s\n\n"					" ¿Qué opción desea realizar?" >> $informe
+			printf "\n%s\n\n"					" Seleccione el tipo de ejecución:" >> $informe
 			printf "\t%s%s\n"					"[1]" " Por eventos (pulsando INTRO en cada cambio de estado)" >> $informe
 			printf "\t%s%s\n"					"[2]" " Automática (introduciendo cada cuántos segundos cambia de estado)" >> $informe
 			printf "\t%s%s\n"					" -> [3]" " Automática sin esperas <-" >> $informe
@@ -534,13 +534,13 @@ function seleccionTipoEjecucion(){
 			sleep 0.3
 			;;
 		4) # Muestra la opción 4 seleccionada.
-			printf "\n$_cyan$_b%s\n\n$_r"		" ¿Qué opción desea realizar?" | tee -a $informeColor
+			printf "\n$_cyan$_b%s\n\n$_r"		" Seleccione el tipo de ejecución:" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[1]" " -> Por eventos (pulsando INTRO en cada cambio de estado)" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[2]" " -> Automática (introduciendo cada cuántos segundos cambia de estado)" | tee -a $informeColor
 			printf "\t$_verd%s$_r%s\n"			"[3]" " -> Automática sin esperas" | tee -a $informeColor
 			printf "\t$_sel%s%s$_r\n"			"[4]" " -> Completa (solo resumen)" | tee -a $informeColor
 
-			printf "\n%s\n\n"					" ¿Qué opción desea realizar?" >> $informe
+			printf "\n%s\n\n"					" Seleccione el tipo de ejecución:" >> $informe
 			printf "\t%s%s\n"					"[1]" " Por eventos (pulsando INTRO en cada cambio de estado)" >> $informe
 			printf "\t%s%s\n"					"[2]" " Automática (introduciendo cada cuántos segundos cambia de estado)" >> $informe
 			printf "\t%s%s\n"					"[3]" " Automática sin esperas" >> $informe
@@ -1855,10 +1855,11 @@ function ejecucion(){
 					logEventos+=" Entra el proceso \e[1;3${colorines[$ejecutando]}m${Ref[$ejecutando]}\e[0m al procesador\n"
 					logEventosBN+=" Entra el proceso ${Ref[$ejecutando]} al procesador\n"
             	fi
-				# else
-				# logEventos+=" Sigue ejecutándose el proceso \e[1;3${colorines[$ejecutando]}m${Ref[$ejecutando]}\e[0m\n"
-				# logEventosBN+=" Sigue ejecutándose el proceso ${Ref[$ejecutando]}\n"
-				# Se imprime muchas veces, hacer que solo lo haga una vez.
+			else	# Se notifica qué proceso sigue ejecutándose (solo cuando se trata de un evento importante) -> si no, se imprimiría demasiadas veces.
+				if [[ $mostrarPantalla -eq 1 ]]; then
+					logEventos+=" Sigue ejecutándose el proceso \e[1;3${colorines[$ejecutando]}m${Ref[$ejecutando]}\e[0m\n"
+					logEventosBN+=" Sigue ejecutándose el proceso ${Ref[$ejecutando]}\n"
+				fi
 			fi
             
 		fi
@@ -2312,18 +2313,31 @@ function muestraTablaFallosPag(){
             	fi
 
 				filaMarcos_BN[$ind,$m]="${filaMarcos_BN[$ind,$m]}$( printf "%*s" "$anchuraCol")"
-          	else
+          	
+			
+			else
 				contenido=$( printf "%s-%s" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" "${procesoTiempoMarcoBits[$ejecutandoAntiguo,$r,$m]}" )
 				
+				# (!!!) Hay tantos if por cambios de última hora. En realidad se podrá poner mucho más resumido.
+
 				# Si es el marco que ocasionó un fallo de página se resalta.
-				#if [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$((r-1))]} -eq $m ]] && [[ ${procesoTiempoMarcoFallo[$ejecutandoAntiguo,$r]} == "F" ]]; then
 				if [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq ${paginas[$ejecutandoAntiguo,$r]} ]] && [[ ${procesoTiempoMarcoFallo[$ejecutandoAntiguo,$r]} == "F" ]]; then
 					
-					if [ "$algReemplazo" = "RELOJ" ]; then		# Acordé con el profesor que si no le apuntaba la manecilla, su bit fuera 0.
+					# Caso MUY particular en que solo hay 1 marco para el proceso, entonces siempre le apunta la manecilla y es el único que provoca los fallos.
+					# Es decir, el bit de reloj tiene que ser 1, tiene que resaltarse y subrayarse.
+					if [[ "$algReemplazo" = "RELOJ" ]] && [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]] ; then
+
+						contenido=$( printf "%s-1" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" )
+						filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "$_u$_res%*s$_r" "$anchuraCol" "$contenido" )"
+
+					elif [ "$algReemplazo" = "RELOJ" ]; then		# Acordé con el profesor que si no le apuntaba la manecilla, su bit fuera 0.
+						
 						contenido=$( printf "%s-0" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" )
+						filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "$_res%*s$_r" "$anchuraCol" "$contenido" )"
+
+					else
+						filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "$_res%*s$_r" "$anchuraCol" "$contenido" )"
 					fi
-					
-					filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "$_res%*s$_r" "$anchuraCol" "$contenido" )"
 
 				# Si estamos en segunda oportunidad y se acaba de actualizar su bit a 1, también se resalta.
 				elif [[ "$algReemplazo" = "SEGOP" ]] && [[ ${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]} -eq ${paginas[$ejecutandoAntiguo,$r]} ]] && [[ ${procesoTiempoMarcoBits[$ejecutandoAntiguo,$r,$m]} -eq 1 ]]; then	
@@ -2334,7 +2348,8 @@ function muestraTablaFallosPag(){
 						filaMarcos[$ind,$m]="${filaMarcos[$ind,$m]}$( printf "$_res%*s$_r" "$anchuraCol" "$contenido" )"
 					fi
 
-            	elif [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then		# Si le apunta la manecilla se subraya.
+				# Si le apunta la manecilla se subraya.
+            	elif [[ ${procesoTiempoMarcoPuntero[$ejecutandoAntiguo,$r]} -eq $m ]]; then		
 
 					if [ "$algReemplazo" = "RELOJ" ]; then		# Acordé con el profesor que si le apuntaba la manecilla, su bit fuera 1.
 						contenido=$( printf "%s-1" "${procesoTiempoMarcoPagina[$ejecutandoAntiguo,$r,$m]}" )
@@ -2430,6 +2445,13 @@ function diagramaMarcos(){
 		fi
 
 
+		if [[ $ejecutando != "vacio" ]]; then
+			tiem=$(( ${nPagAEjecutar[$ejecutando]} - 1 ))
+			#siguienteMarco=${procesoTiempoMarcoPuntero[$ejecutando,$tiem]}
+			siguienteMarco=$(( ${marcoInicial[$ejecutando]} + ${procesoTiempoMarcoPuntero[$ejecutando,$tiem]} ))
+		fi
+		
+
 	 	# Marcos
 		l=1
 		#imprimimos el nombre del marco en el color del proceso que lo ocupa.
@@ -2437,7 +2459,7 @@ function diagramaMarcos(){
 			# Sin color, en negrita
 			marcosPag[$aux,$l]=${marcosPag[$aux,$l]}"$( printf "\e[1m%-*s\e[0m " "${anchoResumenMarco[$marco]}" "M$marco" )"
 			#si el marco es el marcosiguiente donde se van a meter páginas 
-		elif [[ $marco = "$siguienteMarco" ]];then	
+		elif [[ $marco = "$siguienteMarco" ]]; then	
 			#color y subrayar
 			marcosPag[$aux,$l]=${marcosPag[$aux,$l]}"$( printf "%b%-*s\e[0m " "\e[4m\e[1;3${colorines[$p]}m" "${anchoResumenMarco[$marco]}" "M$marco" )"
 		else
@@ -2455,7 +2477,7 @@ function diagramaMarcos(){
 		#imprimimos la página en el color del proceso que ocupa el marco.
 		#si el marco es el marcosiguiente donde se van a meter páginas 
 
-		if [[ $marco = "$siguienteMarco" ]];then		#cambiar. tiene que ser lo de procesotiempo...con el puntero CREO
+		if [[ $marco = "$siguienteMarco" ]];then
 			#añadir subrayado al formato.
 			formato="\e[4m\e[1;3${colorines[$p]}m"
 		elif [[ -n ${memoriaProceso[$marco]} ]];then
@@ -2482,7 +2504,7 @@ function diagramaMarcos(){
 		fi
 
 
-	 	# Coeficientes
+	 	# Coeficientes -> pendiente
 		l=3
 		# if [[ -n ${memoriaBitR[$marco]} ]]; then #procesotiempo...bits
 		# 	marcosPag[$aux,$l]="${marcosPag[$aux,$l]}$( printf "%b%*s \e[0m" "\e[1;3${colorines[$p]}m" "${anchoResumenMarco[$marco]}" "${memoriaBitR[$marco]}" )"
@@ -2600,14 +2622,7 @@ function diagramaMemoria(){
 			barraM[$aux,$l]="${barraM[$aux,$l]}$( printf "%b%*s\e[0m" "$formato" "$anchoUnidadBarras" "-" )"
 
 			barraM_BN[$aux,$l]="${barraM_BN[$aux,$l]}$( printf "%*s" "$anchoUnidadBarras" "-" )"
-			else
-
-				# if [[ ${enMemoria[$p]} == "salido" ]]; then		# NUEVO AÑADIDO. VER SI FUNCIONA
-				# 	barraM[$aux,$l]="${barraM[$aux,$l]}$( printf "%b%*s\e[0m" "$formato" "$anchoUnidadBarras" "-" )"
-				# else
-				# 	#poner el color y escribir la página que ocupa ese marco
-				# 	barraM[$aux,$l]="${barraM[$aux,$l]}$( printf "%b%*s\e[0m" "$formato" "$anchoUnidadBarras" "${memoriaPagina[$marco]}" )"
-				# fi
+		else
 
 			#poner el color y escribir la página que ocupa ese marco
 			barraM[$aux,$l]="${barraM[$aux,$l]}$( printf "%b%*s\e[0m" "$formato" "$anchoUnidadBarras" "${memoriaPagina[$marco]}" )"
@@ -3329,12 +3344,10 @@ function final(){
 				vim $informe;;
 		esac
 
-		echo ""
-		echo " Presione cualquier tecla para continuar"
+		printf "\n\n Presione cualquier tecla para continuar"
 		read -n 1
 	else
-		echo
-		echo -e " \e[1;31mNo se abrirá el informe\e[0m"
+		printf "\n >> No se abrirá el informe."
 		sleep 1
 	fi
 	cabeceraFinal
