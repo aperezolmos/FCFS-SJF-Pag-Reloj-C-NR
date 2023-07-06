@@ -14,7 +14,7 @@
     		# Después de decir si era el color del texto o fondo, para indicar que se va a usar la paleta de 256 colores se pone ' 5; '
     		# Finalmente, se escribe el color deseado de esa paleta seguido por m (p.e: '140m ')
 		#
-		declare -r _sel='\e[46m'		# Fondo cyan para la selección de opciones.
+		declare -r _sel='\e[48;5;111m'		# Fondo cyan para la selección de opciones.
 		declare -r _rojo='\e[38;5;160m'
 		declare -r _nrja='\e[38;5;208m'
 		declare -r _amll='\e[38;5;220m'
@@ -23,11 +23,11 @@
 		declare -r _azul='\e[38;5;38m'
 		declare -r _mora='\e[38;5;133m'
 		declare -r _rosa='\e[38;5;211m'
-		declare -r _r='\033[0m' 		# Reset
-		declare -r _b='\033[1m' 		# Bold
-		declare -r _i='\033[3m' 		# Italic
-		declare -r _u='\033[4m' 		# Underline
-		declare -r _s='\033[9m' 		# Strikeout
+		declare -r _r='\033[0m' 			# Reset
+		declare -r _b='\033[1m' 			# Bold
+		declare -r _i='\033[3m' 			# Italic
+		declare -r _u='\033[4m' 			# Underline
+		declare -r _s='\033[9m' 			# Strikeout
 	#
 
 	# Globales (utilizadas en todo el programa)
@@ -2246,8 +2246,8 @@ function resumenTMedios(){
 # Muestra la tabla de fallos de paginación del proceso que acaba de terminar de ejecutarse.
 function muestraTablaFallosPag(){
 
-	local _f="\e[1;3${colorines[$ejecutandoAntiguo]}m"		# Color del proceso que se acaba de terminar de ejecutar.
-	local _res="\e[4${colorines[$ejecutandoAntiguo]}m"		# Para resaltar el marco que causó el fallo de página en cada instante.
+	local _f="\e[1;3${colorines[$ejecutandoAntiguo]}m"					# Color del proceso que se acaba de terminar de ejecutar.
+	local _res="\e[4${colorines[$ejecutandoAntiguo]}m\e[38;5;255m"		# Para resaltar el marco que causó el fallo de página en cada instante.
 	printf "\n Se han producido $_f$_b%d$_r fallos de página en la ejecución de $_f$_b%s$_r" "${fallos[$ejecutandoAntiguo]}" "${Ref[$ejecutandoAntiguo]}" | tee -a $informeColor
 	printf "\n Se han producido %d fallos de página en la ejecución de %s" "${fallos[$ejecutandoAntiguo]}" "${Ref[$ejecutandoAntiguo]}" >> $informe
 	
