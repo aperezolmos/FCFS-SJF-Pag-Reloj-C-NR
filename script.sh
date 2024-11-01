@@ -991,6 +991,7 @@ function entradaManualRangos(){
 	
 	p=$(($p - 1))
 	nProc=$p
+	clearYCabecera
 	imprimeVarGlobRangos
 	printf "\n%s\n" " Pulse INTRO para continuar ↲"
 	read

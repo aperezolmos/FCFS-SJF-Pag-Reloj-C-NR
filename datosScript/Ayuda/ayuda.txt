@@ -1,66 +1,114 @@
-##############################################################################
-#                                                                            #
-#                           -- FICHERO DE AYUDA --                           #
-#                    Autora: Amanda Pérez Olmos (2022-2023)                  #
-#                                                                            #
-#             Basado en el fichero de: César Rodríguez Villagrá,             #
-#    Diego García Muñoz, Fernando Antón Ortega y Daniel Beato de la Torre    #
-#                                                                            #
-##############################################################################
+
+ ##############################################################################
+ #                                                                            #
+ #                           -- FICHERO DE AYUDA --                           #
+ #                    Autora: Amanda Pérez Olmos (2022-2023)                  #
+ #                                                                            #
+ #             Basado en el fichero de: César Rodríguez Villagrá,             #
+ #    Diego García Muñoz, Fernando Antón Ortega y Daniel Beato de la Torre    #
+ #                                                                            #
+ ##############################################################################
 
 
-IMPORTANTE: Para que funciona la entrada por fichero todos los ficheros
-	que se indican a continuación deben estar en el directorio "datosScript"
-	y éste, en el directorio del script.
+ (!!) IMPORTANTE: Para que el programa funcione y lea/introduzca correctamente los datos, todos los ficheros que se indican
+                  a continuación deben estar en el directorio 'datosScript'. Éste, a su vez, debe encontrarse en el directorio
+                  donde se sitúa el script.
 
-TAMAÑO TERMINAL: Se recomienda ampliar la terminal a pantalla completa.
+ CONTENIDOS:
+    1 - Tamaño terminal
+    2 - Informes
+    3 - Algoritmos de planificación de procesos
+    4 - Algoritmos de reemplazo de páginas
+    5 - Métodos de entrada de datos
+    6 - Modos de ejecución
+    
+ ---------------------------------------------------------------------------------------------------------------------------------
 
-INFORMES: por defecto tienen los nombres informeBN.txt e informeCOLOR.txt
-	y se guardan en la carpeta datosScript/informes
-	el nombre de los informes se puede cambiar al inicio del programa
+ 1 - TAMAÑO TERMINAL
+ 
+    Se recomienda ampliar el terminal a pantalla completa para visualizar adecuadamente toda la información.
 
 
+ 2 - INFORMES
+ 
+    Todos los volcados a pantalla de eventos importantes son también enviados a 2 informes. En el informe a color se visualiza tal
+    y como se ve en pantalla. El informe en blanco y negro no tiene secuencias de escape (colores, formato, etc.).
+    
+    Por defecto tienen los nombres de 'informeBN.txt' e 'informeCOLOR.txt' y se guardan en la carpeta 'datosScript/Informes'. El
+    nombre de los informes se puede cambiar al inicio del programa.
 
+
+ 3 - ALGORITMOS DE PLANIFICACIÓN DE PROCESOS
+    
+    - FCFS: De los procesos que se encuentran en memoria, el primero que se ejecutará será el primero de ellos que llegó a memoria.
+    - SJF: De los procesos que se encuentran en memoria, el primero que se ejecutará será el que tenga menor tiempo de ejecución.
+
+    Nota: En el algoritmo, el tiempo de ejecución es igual al número de páginas del proceso, en la realidad no tiene por qué ser así.
+
+
+ 4 - ALGORITMOS DE REEMPLAZO DE PÁGINAS
+    
+    - Reloj: Una manecilla apunta a la página más antigua. En la práctica, actúa igual que un FIFO (se reemplaza la más antigua).
+    - Segunda Oportunidad: Inspecciona el bit R de la página más antigua. Si es 0, se reemplaza. Si es 1, se pone a 0 y se coloca al
+                           final. Si se usa una página, su bit R se pone a 1. Así se evita deshacerse de una página de uso frecuente.
+    
+    
+ 5 - MÉTODOS DE ENTRADA DE DATOS
+ 
+	5.1 - ENTRADA DE DATOS POR TECLADO
+	Se irán pidiendo los datos uno a uno por pantalla. El usuario deberá escribir cada dato y pulsar INTRO.
 	
+	5.2 - ENTRADA DE DATOS DE ÚLTIMA EJECUCIÓN
+	Obtiene los datos de la última ejecución, los cuales se encuentran almacenados en 'FLast/DatosLast.txt'.
 
-ENTRADA DE DATOS POR TECLADO:
-	Se irán pidiendo los datos uno a uno por pantalla, y el usuario deberá escribir cada dato y pulsar INTRO
+	5.3 - OTRO FICHERO DE DATOS
+	Se selecciona un fichero de los disponibles en el directorio 'FDatos' y se leen sus parámetros.
 	
-ENTRADA DE DATOS DE ÚLTIMA EJECUCIÓN:
-	Obtiene los datos de la última ejecución para porder volver a ejecutarlo
-
-OTRO FICHERO DE DATOS
-
 	Para introducir los datos por fichero hay que seguir la siguiente estructura:
 
-			Número de direcciones de página de la memoria
-			Tamaño de página
-			Tiempo de llegada P01;Tiempo de ejecución P01;Número de marcos P01;;Dirección de página 1 P01;Dirección de página 2 P01;...;Dirección de página N P01;
-			Tiempo de llegada P02;Tiempo de ejecución P02;Número de marcos P02;;Dirección de página 1 P02;Dirección de página 2 P02;...;Dirección de página N P02;
-			Tiempo de llegada P03;Tiempo de ejecución P03;Número de marcos P03;;Dirección de página 1 P03;Dirección de página 2 P03;...;Dirección de página N P03;
-			...
-			Tiempo de llegada P0N;Tiempo de ejecución P0N;Número de marcos P0N;;Dirección de página 1 P0N;Dirección de página 2 P0N;...;Dirección de página N P0N;
+		Número de direcciones de página de la memoria
+		Tamaño de página
+		Tiempo de llegada P01;Número de marcos P01;;Dirección de página 1 P01;Dirección de página 2 P01;...;Dirección de página N P01;
+		Tiempo de llegada P02;Número de marcos P02;;Dirección de página 1 P02;Dirección de página 2 P02;...;Dirección de página N P02;
+		Tiempo de llegada P03;Número de marcos P03;;Dirección de página 1 P03;Dirección de página 2 P03;...;Dirección de página N P03;
+		...
+		Tiempo de llegada P0N;Número de marcos P0N;;Dirección de página 1 P0N;Dirección de página 2 P0N;...;Dirección de página N P0N;
 			
-	Por ejemplo:
+	Ejemplo:
+		500
+		100
+		5;3;;223;343;554;211;
+		4;3;;665;445;342;478;678;974;342;999;
+		2;5;;444;323;567;722;221;148;543;332;224;765;113;988;
+		0;2;;456;543;
 			
-			500
-			100
-			5;4;3;;223;343;554;211;
-			4;8;3;;665;445;342;478;678;974;342;999;
-			2;12;5;;444;323;567;722;221;148;543;332;224;765;113;988;
-			0;2;2;;456;543;
+	Nota: En el algoritmo, el tiempo de ejecución es igual al número de páginas del proceso, en la realidad no tiene por qué ser así.
+	
+	5.4 - ALEATORIO MANUAL
+	Pide al usuario unos rangos de datos para generar los datos del problema aleatoriamente.
+	
+	5.5 - FICHERO DE RANGOS DE ÚLTIMA EJECUCIÓN
+	Obtiene los datos de la última ejecución, los cuales se encuentran almacenados en 'FLast/DatosRangosLast.txt' y con ellos
+	genera unos nuevos datos aleatorios.
+	
+	5.6 - OTRO FICHERO DE RANGOS
+	Se selecciona un fichero de los disponibles en el directorio 'FRangos', se leen los rangos contenidos y se generan datos
+	aleatorios que se encuentren entre esos límites.
+	
+	5.7 - ALEATORIO TOTAL
+	Se leen unos rangos (más grandes que los normales, entre los que puede haber incluso números negativos) del fichero
+	'FRangosAleatorioTotal/DatosRangosAleatorioTotal.txt' y se generan los valores mínimos. Se muestran por pantalla los valores
+	del fichero junto a los mínimos calculados y se señalan los errores que han tenido lugar (p.e: número de procesos negativo).
+	Después, se corrigen dichos mínimos, se generan los máximos, se guardan estos parámetros en un fichero de rangos y se
+	generan nuevos datos aleatorios siguiendo esos rangos (que ahora sí son correctos).
 
-	NOTA IMPORTANTE: Recuerda que el número de páginas debe ser igual
-	al tiempo de ejecución de su proceso correspondiente.
-	
-ALEATORIO MANUAL:
-	Pide al usuario unos rangos de datos para generar los datos del problema pseudoaleatoriamente
-	
-FICHERO DE RANGOS DE ULTIMA EJECUCUION (datosrangos.txt):
-	Permite al usuario obtener los anteriores rangos que se han introducido aleatoriamente
-	
-OTRO FICHERO DE RANGOS:
-	Permite importar lo rangos guadardados en un fichero para que se puedan ejecutar, sin importar que sea de la última ejecución
+
+ 6 - MODOS DE EJECUCIÓN
+    
+    - Por eventos: El usuario cambia manualmente entre eventos importantes (entrada a memoria, entrada/salida de CPU...) pulsando INTRO.
+    - Automático: Se pedirá por teclado un número que será el número de segundos de espera entre los volcados de los eventos por pantalla.
+    - Automático (sin esperas): Igual que el anterior pero el número de segundos es 0.
+    - Completo (solo resumen): No se muestra la ejecución por pantalla, solo el resumen de tiempos de espera, retorno y fallos de página.
 	
 
  --- SISTEMAS OPERATIVOS - CURSO 2022/23 ---
